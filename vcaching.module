@@ -1,0 +1,327 @@
+<?php
+
+function vcaching_page_alter(&$page)
+{
+    $enable = variable_get('vcaching_enable');
+    if ($enable) {
+        drupal_add_http_header('X-VC-Enabled: true', true);
+        $ttl = variable_get('vcaching_ttl');
+        drupal_add_http_header('X-VC-TTL: ' . $ttl, true);
+        if ($debug = variable_get('vcaching_debug')) {
+            drupal_add_http_header('X-VC-Debug: true', true);
+        }
+    } else {
+        drupal_add_http_header('X-VC-Enabled: false', true);
+    }
+}
+
+function vcaching_menu()
+{
+    $items = array();
+
+    $items['admin/config/system/vcaching'] = array(
+        'title' => 'Varnish Caching',
+        'description' => 'Varnish Caching',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('vcaching_settings_form'),
+        'access arguments' => array('access administration pages'),
+        'type' => MENU_NORMAL_ITEM,
+        'weight' => 50,
+        'file' => 'system.admin.inc',
+        'file path' => drupal_get_path('module', 'system')
+    );
+
+    $items['admin/config/system/vcaching/settings'] = array(
+        'title' => 'Settings',
+        'description' => 'Varnish Caching Setings',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('vcaching_settings_form'),
+        'access arguments' => array('access administration pages'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'weight' => 10
+    );
+
+    $items['admin/config/system/vcaching/console'] = array(
+        'title' => 'Console',
+        'description' => 'Varnish Caching Console',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('vcaching_console_form'),
+        'access arguments' => array('access administration pages'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 20
+    );
+
+    $items['admin/config/system/vcaching/stats'] = array(
+        'title' => 'Stats',
+        'description' => 'Varnish Caching Stats',
+        'page callback' => 'vcaching_stats_form',
+        'page arguments' => array(),
+        'access callback' => true,
+        'access arguments' => array('access administration pages'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 30
+    );
+
+    return $items;
+}
+
+function vcaching_settings_form()
+{
+    $form = array();
+    $form['general']['vcaching_enable'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enable'),
+        '#description' => t('Enable Varnish Caching'),
+        '#default_value' => variable_get('vcaching_enable', '1'),
+        '#title_display' => 'before'
+    );
+    $form['general']['vcaching_homepage_ttl'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Homepage cache TTL'),
+        '#description' => t('Time to live in seconds in Varnish cache for homepage'),
+        '#default_value' => variable_get('vcaching_homepage_ttl', '600'),
+        '#size' => 10,
+        '#maxlength' => 10,
+        '#required' => TRUE,
+    );
+    $form['general']['vcaching_ttl'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Cache TTL'),
+        '#description' => t('Time to live in seconds in Varnish cache'),
+        '#default_value' => variable_get('vcaching_ttl', '600'),
+        '#size' => 10,
+        '#maxlength' => 10,
+        '#required' => TRUE,
+    );
+    $form['general']['vcaching_ips'] = array(
+        '#type' => 'textfield',
+        '#title' => t('IPs'),
+        '#description' => t('Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080'),
+        '#default_value' => variable_get('vcaching_ips', '127.0.0.1'),
+        '#size' => 60,
+        '#maxlength' => 500,
+        '#required' => TRUE,
+    );
+    $form['general']['vcaching_dynamic_host'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Dynamic host'),
+        '#description' => t('Uses the $_SERVER[\'HTTP_HOST\'] as hash for Varnish. This means the purge cache action will work on the domain you\'re on. Use this option if you use only one domain.'),
+        '#default_value' => variable_get('vcaching_dynamic_host', 0)
+    );
+    if (variable_get('vcaching_dynamic_host') == 0) {
+        $form['general']['vcaching_hosts'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Hosts'),
+            '#description' => t('Comma separated hostnames. Varnish uses the hostname to create the cache hash. For each IP, you must set a hostname. Use this option if you use multiple domains.'),
+            '#default_value' => variable_get('vcaching_hosts', 'example.com'),
+            '#size' => 60,
+            '#maxlength' => 500,
+            '#required' => TRUE,
+        );
+    }
+    $form['general']['vcaching_purge_key'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Purge key'),
+        '#description' => t('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash. If you can\'t use ACL\'s, use this option.'),
+        '#default_value' => variable_get('vcaching_purge_key', 'ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4'),
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#required' => TRUE,
+    );
+    $form['general']['vcaching_stats_json_file'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Statistics JSONs'),
+        '#suffix' => '<div class="description">' . t('Comma separated relative URLs. One for each IP. <a href="vcaching/stats?info=1">Click here</a> for more info on how to set this up.') . '</div>',
+        '#default_value' => variable_get('vcaching_stats_json_file', '/varnishstats.json'),
+        '#size' => 100,
+        '#maxlength' => 128
+    );
+    $form['general']['vcaching_clear_cache_node_save'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Clear all cache on node save'),
+        '#description' => t('If this option is on, each node save will trigger a full cache purge (/.*). If it\'s off, only the pages associated with the node will be purged.'),
+        '#default_value' => variable_get('vcaching_clear_cache_node_save', 0),
+        '#title_display' => 'before'
+    );
+    $form['general']['vcaching_debug'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enable debug'),
+        '#description' => t('Send all debugging headers to the client. Also shows complete response from Varnish on purge all.'),
+        '#default_value' => variable_get('vcaching_debug', 0),
+        '#title_display' => 'before'
+    );
+
+    return system_settings_form($form);
+}
+
+function vcaching_console_form()
+{
+    $form = array();
+    $form['action']['vcaching_console_url'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Relative URL'),
+        '#description' => t('Relative URL to purge. Example : /uploads/.*'),
+        '#default_value' => variable_get('vcaching_console_url', '/.*'),
+        '#size' => 60,
+        '#maxlength' => 500,
+        '#required' => TRUE,
+    );
+    $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Purge cache'), '#submit' => array('_vcaching_clear_cache_now'));
+    return system_settings_form($form);
+}
+
+function vcaching_stats_form()
+{
+    return 'to be implemented';
+}
+
+function _vcaching_clear_cache_now($form, &$form_state)
+{
+    if (variable_get('vcaching_enable')) {
+        $vcaching = new VCaching('vcaching_');
+        $vcaching->purgeUrl($_POST['vcaching_console_url']);
+        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+    }
+}
+
+function vcaching_node_presave($node)
+{
+    if (variable_get('vcaching_enable')) {
+        $vcaching = new VCaching('vcaching_');
+        if (variable_get('vcaching_clear_cache_node_save')) {
+            $vcaching->purgeUrl(base_path() . '?vc-regex');
+        } else {
+            $vcaching->purgeUrl(base_path() . $node->path['alias']);
+        }
+        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+    }
+}
+
+class VCaching
+{
+    protected $prefix = '';
+    protected $purgeUrls = array();
+    protected $varnishIp = null;
+    protected $varnishHost = null;
+    protected $dynamicHost = null;
+    protected $ipsToHosts = array();
+    protected $statsJsons = array();
+    protected $purgeKey = null;
+    protected $getParam = 'purge_varnish_cache';
+    protected $noticeMessage = '';
+    protected $debug = 0;
+
+    public function __construct($prefix)
+    {
+        $this->prefix = $prefix;
+        $this->setupIpsToHosts();
+        $this->purgeKey = ($purgeKey = trim(variable_get($this->prefix . 'purge_key'))) ? $purgeKey : null;
+    }
+
+    protected function setupIpsToHosts()
+    {
+        $this->debug = variable_get($this->prefix . 'debug');
+        $this->varnishIp = variable_get($this->prefix . 'ips');
+        $this->varnishHost = variable_get($this->prefix . 'hosts');
+        $this->dynamicHost = variable_get($this->prefix . 'dynamic_host');
+        $this->statsJsons = variable_get($this->prefix . 'stats_json_file');
+        $varnishIp = explode(',', $this->varnishIp);
+        $varnishHost = explode(',', $this->varnishHost);
+        $statsJsons = explode(',', $this->statsJsons);
+        foreach ($varnishIp as $key => $ip) {
+            if (strpos($ip, ':')) {
+                $_ip = explode(':', $ip);
+                $ip = $_ip[0];
+                $port = $_ip[1];
+            } else {
+                $port = 80;
+            }
+            $this->ipsToHosts[] = array(
+                'ip' => $ip,
+                'port' => $port,
+                'host' => $this->dynamicHost ? $_SERVER['HTTP_HOST'] : $varnishHost[$key],
+                'statsJson' => isset($statsJsons[$key]) ? $statsJsons[$key] : null
+            );
+        }
+
+        $this->purgeKey = ($purgeKey = trim(variable_get($this->prefix . 'purge_key'))) ? $purgeKey : null;
+    }
+
+    public function purgeCache()
+    {
+        $purgeUrls = array_unique($this->purgeUrls);
+
+        if (empty($purgeUrls)) {
+            if (isset($_GET[$this->getParam])) {
+                $this->purgeUrl('/?vc-regex');
+            }
+        } else {
+            foreach($purgeUrls as $url) {
+                $this->purgeUrl($url);
+            }
+        }
+    }
+
+    public function getNoticeMessage()
+    {
+        return $this->noticeMessage;
+    }
+
+    public function purgeUrl($url)
+    {
+        $p = parse_url($url);
+
+        if (isset($p['path'])) {
+            $path = $p['path'];
+        } else {
+            $path = '';
+        }
+
+        if (isset($p['query']) && ($p['query'] == 'vc-regex')) {
+            $purgemethod = 'regex';
+            $purgeurl = base_path() . '.*';
+        } else {
+            $purgemethod = 'default';
+            $purgeurl = $path;
+        }
+        foreach ($this->ipsToHosts as $key => $ipToHost) {
+            $headers = array('host' => $ipToHost['host'], 'X-VC-Purge-Method' => $purgemethod, 'X-VC-Purge-Host' => $ipToHost['host']);
+            if (!is_null($this->purgeKey)) {
+                $headers['X-VC-Purge-Key'] = $this->purgeKey;
+            }
+            $response = $this->_vcaching_cache_purge($ipToHost['ip'], $ipToHost['port'], $purgeurl, $headers);
+            if ($response['error'] == true) {
+                $this->noticeMessage .= 'Error ' . $response['message'];
+            } else {
+                $this->noticeMessage .= '<br />' . t('Trying to purge URL :') . $purgeurl;
+                $message = preg_match("/<title>(.*)<\/title>/i", $response['message'], $matches);
+                $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? ' => ' . $matches[1] : $response['message'];
+                $this->noticeMessage .= '<br />';
+                if ($this->debug) {
+                    $this->noticeMessage .= nl2br($response['message'], true) . '<br />';
+                }
+            }
+        }
+    }
+
+    protected function _vcaching_cache_purge($server_ip, $server_port, $path = '/.*', $headers)
+    {
+        $fp = fsockopen($server_ip, $server_port, $errno, $errstr, 2);
+        if (!$fp) {
+            return array('error' => true, 'message' => $errstr .'(' . $errno . ')');
+        } else {
+            $out = "PURGE " . $path . " HTTP/1.0\n";
+            foreach ($headers as $key => $value) {
+                $out .= $key . ': '. $value . "\n";
+            }
+            $out .= "Connection: Close\n\n";
+            fwrite($fp, $out);
+            $ret = "";
+            while (!feof($fp)) {
+                $ret .= fgets($fp, 128);
+            }
+            fclose($fp);
+            return array('error' => false, 'message' => $ret);
+        }
+    }
+}
