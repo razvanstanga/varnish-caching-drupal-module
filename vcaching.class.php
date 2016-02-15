@@ -65,9 +65,9 @@ class VCaching
         }
     }
 
-    public function getNoticeMessage()
+    public function getNoticeMessage($console = false)
     {
-        return $this->noticeMessage;
+        return ($console ? str_replace("<br />", "\n", $this->noticeMessage): $this->noticeMessage);
     }
 
     public function purgeUrl($url)

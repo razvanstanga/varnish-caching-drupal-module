@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function vcaching_uninstall() {
+    // Delete variables.
+    variable_del('vcaching_enable');
+    variable_del('vcaching_homepage_ttl');
+    variable_del('vcaching_ttl');
+    variable_del('vcaching_ips');
+    variable_del('vcaching_dynamic_host');
+    variable_del('vcaching_hosts');
+    variable_del('vcaching_purge_key');
+    variable_del('vcaching_stats_json_file');
+    variable_del('vcaching_clear_cache_node_save');
+    variable_del('vcaching_debug');
+    variable_del('vcaching_console_url');
+}

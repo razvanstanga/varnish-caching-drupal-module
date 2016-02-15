@@ -2,6 +2,25 @@
 
 module_load_include('php', 'vcaching', 'vcaching.class');
 
+/**
+ * Implements hook_help()
+ */
+function vcaching_help($path, $arg) {
+    switch ($path) {
+        case 'admin/config/system/vcaching':
+            //return '<p>' . t('') . '</p>';
+
+        case 'admin/config/system/vcaching/console':
+            //return '<p>' . t('') . '</p>';
+
+        case 'admin/config/system/vcaching/stats':
+            //return '<p>' . t('') . '</p>';
+    }
+}
+
+/**
+ * Implements hook_page_alter()
+ */
 function vcaching_page_alter(&$page)
 {
     $enable = variable_get('vcaching_enable');
@@ -17,6 +36,25 @@ function vcaching_page_alter(&$page)
     }
 }
 
+/**
+ * Implements hook_node_presave()
+ */
+function vcaching_node_presave($node)
+{
+    if (variable_get('vcaching_enable')) {
+        $vcaching = new VCaching('vcaching_');
+        if (variable_get('vcaching_clear_cache_node_save')) {
+            $vcaching->purgeUrl(base_path() . '?vc-regex');
+        } else {
+            $vcaching->purgeUrl(base_path() . $node->path['alias']);
+        }
+        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+    }
+}
+
+/**
+ * Implements hook_menu()
+ */
 function vcaching_menu()
 {
     $items = array();
@@ -25,8 +63,8 @@ function vcaching_menu()
         'title' => 'Varnish Caching',
         'description' => 'Varnish Caching',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('vcaching_settings_form'),
-        'access arguments' => array('access administration pages'),
+        'page arguments' => array('vcaching_console_form'),
+        'access arguments' => array('varnish caching console access'),
         'type' => MENU_NORMAL_ITEM,
         'weight' => 50,
         'file' => 'system.admin.inc',
@@ -38,8 +76,8 @@ function vcaching_menu()
         'description' => 'Varnish Caching Setings',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('vcaching_settings_form'),
-        'access arguments' => array('access administration pages'),
-        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'access arguments' => array('varnish caching settings access'),
+        'type' => MENU_LOCAL_TASK,
         'weight' => 10
     );
 
@@ -48,8 +86,8 @@ function vcaching_menu()
         'description' => 'Varnish Caching Console',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('vcaching_console_form'),
-        'access arguments' => array('access administration pages'),
-        'type' => MENU_LOCAL_TASK,
+        'access arguments' => array('varnish caching console access'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
         'weight' => 20
     );
 
@@ -59,14 +97,47 @@ function vcaching_menu()
         'page callback' => 'vcaching_stats_form',
         'page arguments' => array(),
         'access callback' => true,
-        'access arguments' => array('access administration pages'),
+        'access arguments' => array('varnish caching stats access'),
         'type' => MENU_LOCAL_TASK,
         'weight' => 30
     );
 
+      $items['vcaching_purge_all_cache'] = array(
+        'title' => 'Purge Varnish page cache',
+        'description' => 'Clear all page cache',
+        'page callback' => 'vcaching_purge_all_cache_callback',
+        'access arguments' => array('varnish caching purge all'),
+        'menu_name' => 'shortcut-set-1',
+        'type' => MENU_NORMAL_ITEM,
+        'weight' => 10,
+      );
+
     return $items;
 }
 
+/**
+ * Implements hook_permission()
+ */
+function vcaching_permission() {
+    return array(
+        'varnish caching purge all' => array(
+            'title' => t('Purge all Varnish cache from \'Flush all caches\' shortcut'),
+        ),
+        'varnish caching settings access' => array(
+            'title' => t('Change settings'),
+        ),
+        'varnish caching console access' => array(
+            'title' => t('Use the Console'),
+        ),
+        'varnish caching stats access' => array(
+            'title' => t('View stats'),
+        )
+    );
+}
+
+/**
+ * Settings form
+ */
 function vcaching_settings_form()
 {
     $form = array();
@@ -156,6 +227,9 @@ function vcaching_settings_form()
     return system_settings_form($form);
 }
 
+/**
+ * Console form
+ */
 function vcaching_console_form()
 {
     $form = array();
@@ -168,10 +242,13 @@ function vcaching_console_form()
         '#maxlength' => 500,
         '#required' => TRUE,
     );
-    $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Purge cache'), '#submit' => array('_vcaching_clear_cache_now'));
+    $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Purge cache'), '#submit' => array('vcaching_console_form_submit'));
     return system_settings_form($form);
 }
 
+/**
+ * Stats form
+ */
 function vcaching_stats_form()
 {
     if (variable_get('vcaching_enable')) {
@@ -180,7 +257,10 @@ function vcaching_stats_form()
     }
 }
 
-function _vcaching_clear_cache_now($form, &$form_state)
+/**
+ * Console form submit
+ */
+function vcaching_console_form_submit($form, &$form_state)
 {
     if (variable_get('vcaching_enable')) {
         $vcaching = new VCaching('vcaching_');
@@ -189,15 +269,13 @@ function _vcaching_clear_cache_now($form, &$form_state)
     }
 }
 
-function vcaching_node_presave($node)
+/**
+ * Shortcut callback
+ */
+function vcaching_purge_all_cache_callback()
 {
     if (variable_get('vcaching_enable')) {
         $vcaching = new VCaching('vcaching_');
-        if (variable_get('vcaching_clear_cache_node_save')) {
-            $vcaching->purgeUrl(base_path() . '?vc-regex');
-        } else {
-            $vcaching->purgeUrl(base_path() . $node->path['alias']);
-        }
-        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+        $vcaching->purgeUrl(base_path() . '?vc-regex');
     }
 }
