@@ -5,3 +5,4 @@ core = 7.x
 version = "7.x-1.0"
 stylesheets[all][] = css/vcaching.css
 configure = admin/config/system/vcaching/settings
+files[] = vcaching.class.php
