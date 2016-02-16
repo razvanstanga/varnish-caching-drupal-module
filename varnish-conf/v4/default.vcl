@@ -53,7 +53,7 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users. users logged in cookie you can set in settings
+    # don't cache logged-in users. you can set users `logged in cookie` name in settings
     if (req.http.Cookie ~ "c005492c65") {
         set req.http.X-VC-GotSession = "true";
         return(pass);
@@ -89,10 +89,10 @@ sub vcl_recv {
 }
 
 sub vcl_hash {
-    # Add the browser cookie only if a Drupal cookie found.
-    if (req.http.Cookie ~ "SESS") {
-        hash_data(req.http.Cookie);
-    }
+    # Add the browser cookie only if a Drupal cookie found. WIP
+    #if (req.http.Cookie ~ "SESS") {
+    #    hash_data(req.http.Cookie);
+    #}
 }
 
 sub vcl_backend_response {

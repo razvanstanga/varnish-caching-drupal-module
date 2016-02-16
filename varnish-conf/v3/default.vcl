@@ -87,7 +87,7 @@ sub vcl_recv {
 }
 
 sub vcl_hash {
-    # Add the browser cookie only if a Drupal cookie found.
+    # Add the browser cookie only if a Drupal cookie found. WIP
     #if (req.http.Cookie ~ "SESS") {
     #    hash_data(req.http.Cookie);
     #}
