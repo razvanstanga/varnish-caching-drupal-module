@@ -50,7 +50,7 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users, wip
+    # don't cache logged-in users, wip. will set special cookie on login to use here
     #if (req.http.Cookie ~ "SESS") {
     #    set req.http.X-VC-GotSession = "true";
     #    return(pass);
@@ -109,7 +109,7 @@ sub vcl_fetch {
     }
 
     # You don't wish to cache content for logged in users, wip
-    if (req.http.Cookie ~ "SESSwip") {
+    if (beresp.http.X-VC-GotSession ~ "true") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         return(hit_for_pass);
 

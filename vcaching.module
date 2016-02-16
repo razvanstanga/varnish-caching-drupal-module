@@ -25,6 +25,9 @@ function vcaching_page_alter(&$page)
 {
     $enable = variable_get('vcaching_enable');
     if ($enable) {
+        if (user_is_logged_in()) {
+            drupal_add_http_header('X-VC-GotSession', 'true');
+        }
         if (path_is_admin(current_path())) {
             drupal_add_http_header('X-VC-Enabled', 'false');
         } else {

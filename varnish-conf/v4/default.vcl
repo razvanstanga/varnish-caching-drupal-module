@@ -53,7 +53,7 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users, wip
+    # don't cache logged-in users, wip. will set special cookie on login to use here
     #if (req.http.Cookie ~ "SESS") {
     #    set req.http.X-VC-GotSession = "true";
     #    return(pass);
@@ -89,9 +89,9 @@ sub vcl_recv {
 
 sub vcl_hash {
     # Add the browser cookie only if a Drupal cookie found.
-    #if (req.http.Cookie ~ "SESS") {
-    #    hash_data(req.http.Cookie);
-    #}
+    if (req.http.Cookie ~ "SESS") {
+        hash_data(req.http.Cookie);
+    }
 }
 
 sub vcl_backend_response {
@@ -110,8 +110,8 @@ sub vcl_backend_response {
         set beresp.ttl = 0s;
     }
 
-    # You don't wish to cache content for logged in users, wip
-    if (bereq.http.Cookie ~ "SESSwip") {
+    # You don't wish to cache content for logged in users
+    if (beresp.http.X-VC-GotSession ~ "true") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
