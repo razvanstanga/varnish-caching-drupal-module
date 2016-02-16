@@ -27,7 +27,7 @@ acl purge {
 # include "lib/mobile_cache.vcl";
 # include "lib/mobile_pass.vcl";
 
-### WordPress-specific config ###
+### Drupal-specific config ###
 sub vcl_recv {
     # pipe on weird http methods
     if (req.request !~ "^GET|HEAD|PUT|POST|TRACE|OPTIONS|DELETE$") {
@@ -39,7 +39,7 @@ sub vcl_recv {
         error 750 "http://www.yourdomain.com" + req.url;
     }
 
-    # if you use a subdomain for wp-admin, do not cache it
+    # if you use a subdomain for admin, do not cache it
     if (req.http.host ~ "admin.yourdomain.com") {
         return(pass);
     }
@@ -50,11 +50,11 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users or authors
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
-        set req.http.X-VC-GotSession = "true";
-        return(pass);
-    }
+    # don't cache logged-in users, wip
+    #if (req.http.Cookie ~ "SESS") {
+    #    set req.http.X-VC-GotSession = "true";
+    #    return(pass);
+    #}
 
     # don't cache ajax requests
     if (req.http.X-Requested-With == "XMLHttpRequest") {
@@ -62,14 +62,12 @@ sub vcl_recv {
     }
 
     # don't cache these special pages
-    if (req.url ~ "nocache|wp-admin|wp-(comments-post|login|activate|mail)\.php|bb-admin|server-status|control\.php|bb-login\.php|bb-reset-password\.php|register\.php") {
+    if (req.url ~ "status\.php|update\.php|admin|admin/.*|flag/.*|.*/ajax/.*|.*/ahah/.*") {
         return(pass);
     }
 
     ### looks like we might actually cache it!
-    # fix up the request
     set req.grace = 2m;
-    set req.url = regsub(req.url, "\?replytocom=.*$", "");
 
     # strip query parameters from all urls (so they cache as a single object)
     # be carefull using this option
@@ -77,8 +75,8 @@ sub vcl_recv {
     #    set req.url = regsub(req.url, "\?.*", "");
     #}
 
-    # Remove has_js, Google Analytics __*, and wooTracker cookies.
-    set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(__[a-z]+|has_js|wooTracker)=[^;]*", "");
+    # Remove has_js, Google Analytics __*
+    set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(__[a-z]+|has_js)=[^;]*", "");
     set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
     if (req.http.Cookie ~ "^\s*$") {
         unset req.http.Cookie;
@@ -88,10 +86,10 @@ sub vcl_recv {
 }
 
 sub vcl_hash {
-    # Add the browser cookie only if a WordPress cookie found.
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
-        hash_data(req.http.Cookie);
-    }
+    # Add the browser cookie only if a Drupal cookie found.
+    #if (req.http.Cookie ~ "SESS") {
+    #    hash_data(req.http.Cookie);
+    #}
 }
 
 sub vcl_fetch {
@@ -110,8 +108,8 @@ sub vcl_fetch {
         set beresp.ttl = 0s;
     }
 
-    # You don't wish to cache content for logged in users
-    if (req.http.Cookie ~ "wp-postpass_|wordpress_logged_in_|comment_author|PHPSESSID") {
+    # You don't wish to cache content for logged in users, wip
+    if (req.http.Cookie ~ "SESSwip") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         return(hit_for_pass);
 
