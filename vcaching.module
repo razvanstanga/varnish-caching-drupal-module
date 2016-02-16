@@ -25,14 +25,22 @@ function vcaching_page_alter(&$page)
 {
     $enable = variable_get('vcaching_enable');
     if ($enable) {
-        drupal_add_http_header('X-VC-Enabled: true', true);
-        $ttl = variable_get('vcaching_ttl');
-        drupal_add_http_header('X-VC-TTL: ' . $ttl, true);
-        if ($debug = variable_get('vcaching_debug')) {
-            drupal_add_http_header('X-VC-Debug: true', true);
+        if (path_is_admin(current_path())) {
+            drupal_add_http_header('X-VC-Enabled', 'false');
+        } else {
+            drupal_add_http_header('X-VC-Enabled', 'true');
+            if (drupal_is_front_page()) {
+                $ttl = variable_get('vcaching_homepage_ttl');
+            } else {
+                $ttl = variable_get('vcaching_ttl');
+            }
+            drupal_add_http_header('X-VC-TTL', $ttl);
+            if ($debug = variable_get('vcaching_debug')) {
+                drupal_add_http_header('X-VC-Debug', 'true');
+            }
         }
     } else {
-        drupal_add_http_header('X-VC-Enabled: false', true);
+        drupal_add_http_header('X-VC-Enabled', 'false');
     }
 }
 
@@ -127,7 +135,7 @@ function vcaching_permission() {
             'title' => t('Change settings'),
         ),
         'varnish caching console access' => array(
-            'title' => t('Use the Console'),
+            'title' => t('Use the console'),
         ),
         'varnish caching stats access' => array(
             'title' => t('View stats'),
