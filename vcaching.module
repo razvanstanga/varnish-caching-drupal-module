@@ -212,6 +212,15 @@ function vcaching_settings_form()
         '#maxlength' => 128,
         '#required' => TRUE,
     );
+    $form['general']['vcaching_cookie'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Logged in cookie'),
+        '#description' => t('This module sets a special cookie to tell Varnish that the user is logged in. This should be a random 10 chars string [a-z0-9].'),
+        '#default_value' => variable_get('vcaching_cookie', 'c005492c65'),
+        '#size' => 10,
+        '#maxlength' => 10,
+        '#required' => TRUE,
+    );
     $form['general']['vcaching_stats_json_file'] = array(
         '#type' => 'textfield',
         '#title' => t('Statistics JSONs'),
@@ -289,4 +298,20 @@ function vcaching_purge_all_cache_callback()
         $vcaching = new VCaching('vcaching_');
         $vcaching->purgeUrl(base_path() . '?vc-regex');
     }
+}
+
+/**
+ * Implements hook_user_login()
+ */
+function vcaching_user_login(&$edit, $account)
+{
+    user_cookie_save(array(variable_get('vcaching_cookie') => 1));
+}
+
+/**
+ * Implements hook_user_logout()
+ */
+function vcaching_user_logout($account)
+{
+    user_cookie_delete(variable_get('vcaching_cookie'));
 }

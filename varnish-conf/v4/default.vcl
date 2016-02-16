@@ -53,11 +53,11 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users, wip. will set special cookie on login to use here
-    #if (req.http.Cookie ~ "SESS") {
-    #    set req.http.X-VC-GotSession = "true";
-    #    return(pass);
-    #}
+    # don't cache logged-in users. users logged in cookie you can set in settings
+    if (req.http.Cookie ~ "c005492c65") {
+        set req.http.X-VC-GotSession = "true";
+        return(pass);
+    }
 
     # don't cache ajax requests
     if (req.http.X-Requested-With == "XMLHttpRequest") {
@@ -66,6 +66,7 @@ sub vcl_recv {
 
     # don't cache these special pages
     if (req.url ~ "status\.php|update\.php|admin|admin/.*|flag/.*|.*/ajax/.*|.*/ahah/.*") {
+        set req.http.X-VC-GotUrl = "true";
         return(pass);
     }
 
@@ -111,25 +112,22 @@ sub vcl_backend_response {
     }
 
     # You don't wish to cache content for logged in users
-    if (beresp.http.X-VC-GotSession ~ "true") {
+    if (bereq.http.X-VC-GotSession ~ "true" || beresp.http.X-VC-GotSession ~ "true") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
-        return (deliver);
 
     # Varnish determined the object was not cacheable
     } else if (beresp.ttl <= 0s) {
         set beresp.http.X-VC-Cacheable = "NO:Not Cacheable";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
-        return (deliver);
 
     # You are respecting the Cache-Control=private header from the backend
     } else if (beresp.http.Cache-Control ~ "private") {
         set beresp.http.X-VC-Cacheable = "NO:Cache-Control=private";
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
-        return (deliver);
 
     # You are respecting the X-VC-Enabled=true header from the backend
     } else if (beresp.http.X-VC-Enabled ~ "true") {

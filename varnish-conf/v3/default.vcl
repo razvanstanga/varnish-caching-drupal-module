@@ -50,11 +50,11 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache logged-in users, wip. will set special cookie on login to use here
-    #if (req.http.Cookie ~ "SESS") {
-    #    set req.http.X-VC-GotSession = "true";
-    #    return(pass);
-    #}
+    # don't cache logged-in users. users logged in cookie you can set in settings
+    if (req.http.Cookie ~ "c005492c65") {
+        set req.http.X-VC-GotSession = "true";
+        return(pass);
+    }
 
     # don't cache ajax requests
     if (req.http.X-Requested-With == "XMLHttpRequest") {
@@ -63,6 +63,7 @@ sub vcl_recv {
 
     # don't cache these special pages
     if (req.url ~ "status\.php|update\.php|admin|admin/.*|flag/.*|.*/ajax/.*|.*/ahah/.*") {
+        set req.http.X-VC-GotUrl = "true";
         return(pass);
     }
 
@@ -108,8 +109,8 @@ sub vcl_fetch {
         set beresp.ttl = 0s;
     }
 
-    # You don't wish to cache content for logged in users, wip
-    if (beresp.http.X-VC-GotSession ~ "true") {
+    # You don't wish to cache content for logged in users
+    if (req.http.X-VC-GotSession ~ "true" || beresp.http.X-VC-GotSession ~ "true") {
         set beresp.http.X-VC-Cacheable = "NO:Got Session";
         return(hit_for_pass);
 
