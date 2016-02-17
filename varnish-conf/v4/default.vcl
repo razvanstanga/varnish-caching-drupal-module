@@ -31,6 +31,9 @@ acl purge {
 
 ### Drupal-specific config ###
 sub vcl_recv {
+    # unset X-VC-Cacheable header from client
+    unset req.http.X-VC-Cacheable;
+
     # pipe on weird http methods
     if (req.method !~ "^GET|HEAD|PUT|POST|TRACE|OPTIONS|DELETE$") {
         return(pipe);
@@ -44,29 +47,32 @@ sub vcl_recv {
 
     # if you use a subdomain for admin section, do not cache it
     #if (req.http.host ~ "admin.yourdomain.com") {
+    #    set req.http.X-VC-Cacheable = "NO:Admin domain";
     #    return(pass);
     #}
 
     ### Check for reasons to bypass the cache!
     # never cache anything except GET/HEAD
     if (req.method != "GET" && req.method != "HEAD") {
+        set req.http.X-VC-Cacheable = "NO:Request method:" + req.method;
         return(pass);
     }
 
     # don't cache logged-in users. you can set users `logged in cookie` name in settings
     if (req.http.Cookie ~ "c005492c65") {
-        set req.http.X-VC-GotSession = "true";
+        set req.http.X-VC-Cacheable = "NO:Found logged in cookie";
         return(pass);
     }
 
     # don't cache ajax requests
     if (req.http.X-Requested-With == "XMLHttpRequest") {
+        set req.http.X-VC-Cacheable = "NO:Requested with: XMLHttpRequest";
         return(pass);
     }
 
-    # don't cache these special pages. Not needed anymore, left here as example
+    # don't cache these special pages. Not needed, left here as example
     #if (req.url ~ "status\.php|update\.php|admin|admin/.*|flag/.*|.*/ajax/.*|.*/ahah/.*") {
-    #    set req.http.X-VC-GotUrl = "true";
+    #    set req.http.X-VC-Cacheable = "NO:Special page: " + req.url;
     #    return(pass);
     #}
 
@@ -95,7 +101,7 @@ sub vcl_hash {
     } else {
         set req.http.hash = req.http.hash + "#" + server.ip;
     }
-    # Add the browser cookie only if a Drupal cookie found. Not needed anymore, left here as example
+    # Add the browser cookie only if a Drupal cookie found. Not needed, left here as example
     #if (req.http.Cookie ~ "SESS") {
     #    hash_data(req.http.Cookie);
     #    set req.http.hash = req.http.hash + "#" + req.http.Cookie;
@@ -118,15 +124,17 @@ sub vcl_backend_response {
         set beresp.ttl = 0s;
     }
 
-    # You don't wish to cache content for logged in users
-    if (bereq.http.X-VC-GotSession ~ "true" || beresp.http.X-VC-GotSession ~ "true") {
-        set beresp.http.X-VC-Cacheable = "NO:Got Session";
+    # Don't cache object as instructed by header bereq.X-VC-Cacheable
+    if (bereq.http.X-VC-Cacheable ~ "^NO") {
+        set beresp.http.X-VC-Cacheable = bereq.http.X-VC-Cacheable;
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
 
-    # Varnish determined the object was not cacheable
+    # Varnish determined the object is not cacheable
     } else if (beresp.ttl <= 0s) {
-        set beresp.http.X-VC-Cacheable = "NO:Not Cacheable";
+        if (!beresp.http.X-VC-Cacheable) {
+            set beresp.http.X-VC-Cacheable = "NO:Not cacheable, ttl: "+ beresp.ttl;
+        }
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
 
@@ -136,13 +144,17 @@ sub vcl_backend_response {
         set beresp.uncacheable = true;
         set beresp.ttl = 120s;
 
-    # You are respecting the X-VC-Enabled=true header from the backend
+    # Cache object
     } else if (beresp.http.X-VC-Enabled ~ "true") {
-        set beresp.http.X-VC-Cacheable = "YES:Enabled";
+        if (!beresp.http.X-VC-Cacheable) {
+            set beresp.http.X-VC-Cacheable = "YES:Is cacheable, ttl: " + beresp.ttl;
+        }
 
     # Do not cache object
     } else if (beresp.http.X-VC-Enabled ~ "false") {
-        set beresp.http.X-VC-Cacheable = "NO:Disabled";
+        if (!beresp.http.X-VC-Cacheable) {
+            set beresp.http.X-VC-Cacheable = "NO:Disabled";
+        }
         set beresp.ttl = 0s;
     }
 
