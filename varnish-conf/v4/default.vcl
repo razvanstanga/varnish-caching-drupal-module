@@ -31,22 +31,21 @@ acl purge {
 
 ### Drupal-specific config ###
 sub vcl_recv {
-    set req.http.hash = "";
     # pipe on weird http methods
     if (req.method !~ "^GET|HEAD|PUT|POST|TRACE|OPTIONS|DELETE$") {
         return(pipe);
     }
 
     # redirect yourdomain.com to www.yourdomain.com
-    if (req.http.host ~ "^yourdomain\.com$") {
-        set req.http.X-VC-Redirect = "http://www.yourdomain.com" + req.url;
-        return (synth(750, "Moved permanently"));
-    }
+    #if (req.http.host ~ "^yourdomain\.com$") {
+    #    set req.http.X-VC-Redirect = "http://www.yourdomain.com" + req.url;
+    #    return (synth(750, "Moved permanently"));
+    #}
 
     # if you use a subdomain for admin section, do not cache it
-    if (req.http.host ~ "admin.yourdomain.com") {
-        return(pass);
-    }
+    #if (req.http.host ~ "admin.yourdomain.com") {
+    #    return(pass);
+    #}
 
     ### Check for reasons to bypass the cache!
     # never cache anything except GET/HEAD
@@ -65,11 +64,11 @@ sub vcl_recv {
         return(pass);
     }
 
-    # don't cache these special pages
-    if (req.url ~ "status\.php|update\.php|admin|admin/.*|flag/.*|.*/ajax/.*|.*/ahah/.*") {
-        set req.http.X-VC-GotUrl = "true";
-        return(pass);
-    }
+    # don't cache these special pages. Not needed anymore, left here as example
+    #if (req.url ~ "status\.php|update\.php|admin|admin/.*|flag/.*|.*/ajax/.*|.*/ahah/.*") {
+    #    set req.http.X-VC-GotUrl = "true";
+    #    return(pass);
+    #}
 
     ### looks like we might actually cache it!
 
@@ -139,7 +138,7 @@ sub vcl_backend_response {
 
     # You are respecting the X-VC-Enabled=true header from the backend
     } else if (beresp.http.X-VC-Enabled ~ "true") {
-        set beresp.http.X-VC-Cacheable = "YES";
+        set beresp.http.X-VC-Cacheable = "YES:Enabled";
 
     # Do not cache object
     } else if (beresp.http.X-VC-Enabled ~ "false") {

@@ -35,14 +35,14 @@ sub vcl_recv {
     }
 
     # redirect yourdomain.com to www.yourdomain.com
-    if (req.http.host ~ "^yourdomain\.com$") {
-        error 750 "http://www.yourdomain.com" + req.url;
-    }
+    #if (req.http.host ~ "^yourdomain\.com$") {
+    #    error 750 "http://www.yourdomain.com" + req.url;
+    #}
 
     # if you use a subdomain for admin, do not cache it
-    if (req.http.host ~ "admin.yourdomain.com") {
-        return(pass);
-    }
+    #if (req.http.host ~ "admin.yourdomain.com") {
+    #    return(pass);
+    #}
 
     ### Check for reasons to bypass the cache!
     # never cache anything except GET/HEAD
