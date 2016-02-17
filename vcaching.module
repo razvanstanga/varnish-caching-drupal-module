@@ -19,28 +19,24 @@ function vcaching_help($path, $arg) {
 }
 
 /**
- * Implements hook_page_alter()
+ * Implements hook_init()
  */
-function vcaching_page_alter(&$page)
+function vcaching_init()
 {
     $enable = variable_get('vcaching_enable');
     if ($enable) {
         if (user_is_logged_in()) {
             drupal_add_http_header('X-VC-GotSession', 'true');
         }
-        if (path_is_admin(current_path())) {
-            drupal_add_http_header('X-VC-Enabled', 'false');
+        drupal_add_http_header('X-VC-Enabled', 'true');
+        if (drupal_is_front_page()) {
+            $ttl = variable_get('vcaching_homepage_ttl');
         } else {
-            drupal_add_http_header('X-VC-Enabled', 'true');
-            if (drupal_is_front_page()) {
-                $ttl = variable_get('vcaching_homepage_ttl');
-            } else {
-                $ttl = variable_get('vcaching_ttl');
-            }
-            drupal_add_http_header('X-VC-TTL', $ttl);
-            if ($debug = variable_get('vcaching_debug')) {
-                drupal_add_http_header('X-VC-Debug', 'true');
-            }
+            $ttl = variable_get('vcaching_ttl');
+        }
+        drupal_add_http_header('X-VC-TTL', $ttl);
+        if ($debug = variable_get('vcaching_debug')) {
+            drupal_add_http_header('X-VC-Debug', 'true');
         }
     } else {
         drupal_add_http_header('X-VC-Enabled', 'false');
