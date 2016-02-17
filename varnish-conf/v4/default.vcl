@@ -31,6 +31,7 @@ acl purge {
 
 ### Drupal-specific config ###
 sub vcl_recv {
+    set req.http.hash = "";
     # pipe on weird http methods
     if (req.method !~ "^GET|HEAD|PUT|POST|TRACE|OPTIONS|DELETE$") {
         return(pipe);
@@ -89,9 +90,16 @@ sub vcl_recv {
 }
 
 sub vcl_hash {
-    # Add the browser cookie only if a Drupal cookie found. WIP
+    set req.http.hash = req.url;
+    if (req.http.host) {
+        set req.http.hash = req.http.hash + "#" + req.http.host;
+    } else {
+        set req.http.hash = req.http.hash + "#" + server.ip;
+    }
+    # Add the browser cookie only if a Drupal cookie found. Not needed anymore, left here as example
     #if (req.http.Cookie ~ "SESS") {
     #    hash_data(req.http.Cookie);
+    #    set req.http.hash = req.http.hash + "#" + req.http.Cookie;
     #}
 }
 
