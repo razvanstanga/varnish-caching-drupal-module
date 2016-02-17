@@ -20,3 +20,17 @@
     background-repeat:no-repeat;
     background-position: 0px 0px;
 }
+
+#vcaching-settings-form span.vcaching-reload {
+    width:20px;
+    height:20px;
+    font-size: 20px;
+    line-height: 1;
+    vertical-align: top;
+    text-align: center;
+    display:inline-block;
+    background-color:transparent;
+    background-image:url(images/refresh.png);
+    background-repeat:no-repeat;
+    background-position: 0px 0px;
+}

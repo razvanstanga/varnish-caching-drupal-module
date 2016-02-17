@@ -206,16 +206,18 @@ function vcaching_settings_form()
     $form['general']['vcaching_purge_key'] = array(
         '#type' => 'textfield',
         '#title' => t('Purge key'),
-        '#description' => t('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash. If you can\'t use ACL\'s, use this option.'),
+        '#suffix' => '<div class="description">' . t('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash. If you can\'t use ACL\'s, use this option. You can set the `purge key` in lib/purge.vcl.<br />Search the default value ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4 to find where to replace it.') . '</div>',
+        '#field_suffix' => '<span class="vcaching-reload" onclick="generateHash(64, 0, \'edit-vcaching-purge-key\'); return false;" title="' . t('Generate') . '"></span>',
         '#default_value' => variable_get('vcaching_purge_key', 'ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4'),
-        '#size' => 60,
-        '#maxlength' => 128,
+        '#size' => 100,
+        '#maxlength' => 64,
         '#required' => TRUE,
     );
     $form['general']['vcaching_cookie'] = array(
         '#type' => 'textfield',
         '#title' => t('Logged in cookie'),
-        '#description' => t('This module sets a special cookie to tell Varnish that the user is logged in. This should be a random 10 chars string [a-z0-9].'),
+        '#suffix' => '<div class="description">' . t('This module sets a special cookie to tell Varnish that the user is logged in. This should be a random 10 chars string [0-9a-z]. You can set the `logged in cookie` in default.vcl.<br />Search the default value <i>c005492c65</i> to find where to replace it.') . '</div>',
+        '#field_suffix' => '<span class="vcaching-reload" onclick="generateHash(10, 0, \'edit-vcaching-cookie\'); return false;" title="' . t('Generate') . '"></span>',
         '#default_value' => variable_get('vcaching_cookie', 'c005492c65'),
         '#size' => 10,
         '#maxlength' => 10,
@@ -243,6 +245,18 @@ function vcaching_settings_form()
         '#default_value' => variable_get('vcaching_debug', 0),
         '#title_display' => 'before'
     );
+
+    drupal_add_js('
+        function generateHash(length, bits, id) {
+            bits = bits || 36;
+            var outStr = "", newStr;
+            while (outStr.length < length)
+            {
+                newStr = Math.random().toString(bits).slice(2);
+                outStr += newStr.slice(0, Math.min(newStr.length, (length - outStr.length)));
+            }
+            jQuery("#" + id).val(outStr);
+        };', 'inline');
 
     return system_settings_form($form);
 }
