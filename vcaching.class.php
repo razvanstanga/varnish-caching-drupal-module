@@ -209,4 +209,74 @@ class VCaching
             return array('error' => false, 'message' => $ret);
         }
     }
+
+    public function _parse_conf_file($version, $file, $content)
+    {
+        if ($file == 'default.vcl') {
+            $logged_in_cookie = variable_get($this->prefix . 'cookie');
+            $content = str_replace('c005492c65', $logged_in_cookie, $content);
+        } else if ($file == 'conf/backend.vcl') {
+            if ($version == 3) {
+                $content = "";
+            } else if ($version == 4) {
+                $content = "import directors;\n\n";
+            }
+            $backend = array();
+            $ips = variable_get($this->prefix . 'conf_backends');
+            $ips = explode(',', $ips);
+            $id = 1;
+            foreach ($ips as $ip) {
+                if (strstr($ip, ":")) {
+                    $_ip = explode(':', $ip);
+                    $ip = $_ip[0];
+                    $port = $_ip[1];
+                } else {
+                    $port = 80;
+                }
+                $content .= "backend backend" . $id . " {\n";
+                $content .= "\t.host = \"" . $ip . "\";\n";
+                $content .= "\t.port = \"" . $port . "\";\n";
+                $content .= "}\n";
+                $backend[3] .= "\t{\n";
+                $backend[3] .= "\t\t.backend = backend" . $id . ";\n";
+                $backend[3] .= "\t}\n";
+                $backend[4] .= "\tbackends.add_backend(backend" . $id . ");\n";
+                $id++;
+            }
+            if ($version == 3) {
+                $content .= "\ndirector backends round-robin {\n";
+                $content .= $backend[3];
+                $content .= "}\n";
+                $content .= "\nsub vcl_recv {\n";
+                $content .= "\tset req.backend = backends;\n";
+                $content .= "}\n";
+            } elseif ($version == 4) {
+                $content .= "\nsub vcl_init {\n";
+                $content .= "\tnew backends = directors.round_robin();\n";
+                $content .= $backend[4];
+                $content .= "}\n";
+                $content .= "\nsub vcl_recv {\n";
+                $content .= "\tset req.backend_hint = backends.backend();\n";
+                $content .= "}\n";
+            }
+        } else if ($file == 'conf/acl.vcl') {
+            $acls = variable_get($this->prefix . 'conf_acls');
+            $acls = explode(',', $acls);
+            $content = "acl cloudflare {\n";
+            $content .= "\t# set this ip to your Railgun IP (if applicable)\n";
+            $content .= "\t# \"1.2.3.4\";\n";
+            $content .= "}\n";
+            $content .= "\nacl purge {\n";
+            $content .= "\t\"localhost\";\n";
+            $content .= "\t\"127.0.0.1\";\n";
+            foreach ($acls as $acl) {
+                $content .= "\t\"" . $acl . "\";\n";
+            }
+            $content .= "}\n";
+        } else if ($file == 'lib/purge.vcl') {
+            $purge_key = variable_get($this->prefix . 'purge_key');
+            $content = str_replace('ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4', $purge_key, $content);
+        }
+        return $content;
+    }
 }

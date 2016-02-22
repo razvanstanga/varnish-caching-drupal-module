@@ -62,6 +62,18 @@ function vcaching_node_presave($node)
 }
 
 /**
+ * Purge a node from Varnish on delete.
+ */
+function varnish_all_node_delete($node)
+{
+    if (variable_get('vcaching_enable')) {
+        $vcaching = new VCaching('vcaching_');
+        $vcaching->purgeUrl(base_path() . $node->path['alias']);
+        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+    }
+}
+
+/**
  * Implements hook_menu()
  */
 function vcaching_menu()
@@ -111,15 +123,25 @@ function vcaching_menu()
         'weight' => 30
     );
 
-      $items['vcaching_purge_all_cache'] = array(
+    $items['admin/config/system/vcaching/conf'] = array(
+        'title' => 'Varnish VCLs',
+        'description' => 'Varnish Cache configuration',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('vcaching_conf_form'),
+        'access arguments' => array('varnish caching settings access'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 40
+    );
+
+    $items['vcaching_purge_all_cache'] = array(
         'title' => 'Purge Varnish page cache',
         'description' => 'Clear all page cache',
         'page callback' => 'vcaching_purge_all_cache_callback',
         'access arguments' => array('varnish caching purge all'),
         'menu_name' => 'shortcut-set-1',
         'type' => MENU_NORMAL_ITEM,
-        'weight' => 10,
-      );
+        'weight' => 10
+    );
 
     return $items;
 }
@@ -279,6 +301,18 @@ function vcaching_console_form()
 }
 
 /**
+ * Console form submit
+ */
+function vcaching_console_form_submit($form, &$form_state)
+{
+    if (variable_get('vcaching_enable')) {
+        $vcaching = new VCaching('vcaching_');
+        $vcaching->purgeUrl($_POST['vcaching_console_url']);
+        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+    }
+}
+
+/**
  * Stats form
  */
 function vcaching_stats_form()
@@ -290,15 +324,94 @@ function vcaching_stats_form()
 }
 
 /**
- * Console form submit
+ * Conf form
  */
-function vcaching_console_form_submit($form, &$form_state)
+function vcaching_conf_form()
 {
-    if (variable_get('vcaching_enable')) {
-        $vcaching = new VCaching('vcaching_');
-        $vcaching->purgeUrl($_POST['vcaching_console_url']);
-        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
+    $form = array();
+    $form['general'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Varnish configuration'),
+        '#weight' => 5,
+        '#collapsible' => false,
+        '#collapsed' => false
+    );
+    $form['general']['vcaching_conf_backends'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Backends'),
+        '#description' => t('Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080'),
+        '#default_value' => variable_get('vcaching_conf_backends'),
+        '#size' => 60,
+        '#required' => true
+    );
+    $form['general']['vcaching_conf_acls'] = array(
+        '#type' => 'textfield',
+        '#title' => t('ACLs'),
+        '#description' => t('Comma separated ip/ip range. Example : 192.168.0.2,192.168.1.1/24'),
+        '#default_value' => variable_get('vcaching_conf_acls'),
+        '#size' => 60,
+        '#required' => true
+    );
+    $form['action'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Get configuration files'),
+        '#weight' => 5,
+        '#collapsible' => false,
+        '#collapsed' => false
+    );
+    $form['action']['vcaching_conf_version'] = array(
+        '#type' => 'select',
+        '#title' => t('Version'),
+        '#description' => t('Varnish Cache version'),
+        '#options' => array(3 => 3,4 => 4),
+        '#default_value' => 3,
+        '#required' => true
+    );
+    $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Download'), '#submit' => array('vcaching_conf_form_submit'));
+    return system_settings_form($form);
+}
+
+/**
+ * Conf form submit
+ */
+function vcaching_conf_form_submit($form, &$form_state)
+{
+    $version = in_array($_POST['vcaching_conf_version'], array(3,4)) ? $_POST['vcaching_conf_version'] : 3;
+    $tmpfile = tempnam("tmp", "zip");
+    $zip = new ZipArchive();
+    $zip->open($tmpfile, ZipArchive::OVERWRITE);
+    $files = array(
+        'default.vcl' => true,
+        'LICENSE' => false,
+        'README.rst' => false,
+        'conf/acl.vcl' => true,
+        'conf/backend.vcl' => true,
+        'lib/bigfiles.vcl' => false,
+        'lib/bigfiles_pipe.vcl' => false,
+        'lib/cloudflare.vcl' => false,
+        'lib/mobile_cache.vcl' => false,
+        'lib/mobile_pass.vcl' => false,
+        'lib/purge.vcl' => true,
+        'lib/static.vcl' => false,
+        'lib/xforward.vcl' => false,
+    );
+    $vcaching = new VCaching('vcaching_');
+    foreach ($files as $file => $parse) {
+        $filepath = __DIR__ . '/varnish-conf/v' . $version . '/' . $file;
+        if ($parse) {
+            $content = $vcaching->_parse_conf_file($version, $file, file_get_contents($filepath));
+        } else {
+            $content = file_get_contents($filepath);
+        }
+        $zip->addFromString($file, $content);
     }
+    $zip->close();
+    header('Content-Type: application/zip');
+    header('Content-Length: ' . filesize($tmpfile));
+    header('Content-Disposition: attachment; filename="varnish_v' . $version . '_conf.zip"');
+    readfile($tmpfile);
+    unlink($tmpfile);
+    exit();
 }
 
 /**

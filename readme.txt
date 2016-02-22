@@ -27,6 +27,7 @@ You can control the following from the Varnish Caching admin panel :
 * Cache TTL (for every other page)
 * IPs/Hosts to clear cache to support every type of Varnish Cache implementation
 * Purge key based PURGE
+* Logged in cookie
 * Debugging option
 * console for precise manual purges
 
@@ -51,6 +52,7 @@ Main features
  * supports every type of Varnish Cache implementation, see screenshots for examples
  * unlimited number of Varnish Cache servers
  * use of custom headers when communicating with Varnish Cache does not interfere with other caching plugins, cloudflare, etc
+ * Varnish Cache configuration generator
  * purge key method so you don't need to setup ACLs
  * debugging
  * actively maintained
@@ -59,8 +61,11 @@ Main features
 INSTALLATION AND CONFIGURATION
 ------------------------------
 
-Use the provided config files for Varnish Cache located in vcaching/varnish-conf folder. Just edit the backend IP/port and ACLs.
-You can also use the purge key method. You must fill in lib/purge.vcl the purge key.
+ * You must install Varnish Cache on your server(s)
+ * Go to the configuration generator. Fill in the backends/ACLs then download the configuration files
+ * Use these configuration files to configure Varnish Cache server(s). Usualy the configuration files are in /etc/varnish. In most cases you must put the downloaded configuration files in /etc/varnish and restart Varnish Cache
+
+ * Or use the provided Varnish Cache configuration files located in /wp-content/plugins/vcaching/varnish-conf folder.
 
  * Configure Varnish Caching settings in Configure » System » Varnish Caching:
     - Enable/Disable caching
@@ -95,11 +100,19 @@ TROUBLESHOOTING
 
  * How do I configure my Varnish Cache VCL?
 
-    - Use the provided Varnish Cache configuration files located in vcaching/varnish-conf folder.
+    - Use the Varnish Cache configuration generator. Fill in the backends/ACLs then download your configuration files.
+    - Or use the provided Varnish Cache configuration files located in /wp-content/plugins/vcaching/varnish-conf folder.
 
  * Can I use this with a proxy service like CloudFlare?
 
     - Yes.
+
+    * What is logged in cookie?
+
+    - Logged in cookie is a special cookie this plugin sets upon user login. Varnish Cache uses this cookie to bypass caching for logged in users.
+
+    - This is a small step towards securing your site for denial of service attacks. Denial of service attacks can happen if the attacker bypasses Varnish Cache and hits the backend directly.
+    - With the current configuration and the way Wordpress works, this can still happen with POST/AJAX requests.
 
 
 CREDITS / CONTACT
