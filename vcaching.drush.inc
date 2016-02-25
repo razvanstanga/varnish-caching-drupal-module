@@ -7,11 +7,8 @@
 
 /**
  * Implements hook_drush_command().
- *
- * @return array
  */
-function vcaching_drush_command()
-{
+function vcaching_drush_command() {
   $items = array();
   $items['vcaching-purge-all'] = array(
     'description' => 'Purge all pages in varnish.',
@@ -36,8 +33,7 @@ function vcaching_drush_command()
  *
  * @return void
  */
-function vcaching_purge_all()
-{
+function vcaching_purge_all() {
   $vcaching = new VCaching('vcaching_');
   drush_log(t('Purging all Varnish cache'), 'ok');
   $vcaching->purgeUrl(base_path() . '?vc-regex');
@@ -48,10 +44,8 @@ function vcaching_purge_all()
  * Callback for vcaching-purge-urls drush command.
  *
  * @param string $paths A space separated list of paths.
- * @return void
  */
-function vcaching_purge_urls($paths)
-{
+function vcaching_purge_urls($paths) {
   $vcaching = new VCaching('vcaching_');
   $paths = explode(";", $paths);
   foreach ($paths as $path) {
@@ -63,11 +57,7 @@ function vcaching_purge_urls($paths)
 
 /**
  * Implements hook_drush_cache_clear().
- *
- * @param array $types
- * @return void
  */
-function vcaching_drush_cache_clear(&$types)
-{
+function vcaching_drush_cache_clear(&$types) {
   $types['vcaching'] = 'vcaching_purge_all';
 }

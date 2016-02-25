@@ -1,36 +1,36 @@
 /**
  * Icons
  */
-#page-title .path-admin-config-system-vcaching span.icon {
-    width:35px;
-    height:30px;
-    display:block;
-    background-color:transparent;
-    background-image:url(images/icon.png);
-    background-repeat:no-repeat;
-    background-position: 0px 0px;
+ #page-title .path-admin-config-system-vcaching span.icon {
+  width:35px;
+  height:30px;
+  display:block;
+  background-color:transparent;
+  background-image:url(images/icon.png);
+  background-repeat:no-repeat;
+  background-position: 0px 0px;
 }
 
 #block-system-main .path-admin-config-system-vcaching span.icon {
-    width:35px;
-    height:30px;
-    display:block;
-    background-color:transparent;
-    background-image:url(images/icon.png);
-    background-repeat:no-repeat;
-    background-position: 0px 0px;
+  width:35px;
+  height:30px;
+  display:block;
+  background-color:transparent;
+  background-image:url(images/icon.png);
+  background-repeat:no-repeat;
+  background-position: 0px 0px;
 }
 
 #vcaching-settings-form span.vcaching-reload {
-    width:20px;
-    height:20px;
-    font-size: 20px;
-    line-height: 1;
-    vertical-align: top;
-    text-align: center;
-    display:inline-block;
-    background-color:transparent;
-    background-image:url(images/refresh.png);
-    background-repeat:no-repeat;
-    background-position: 0px 0px;
+  width:20px;
+  height:20px;
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: top;
+  text-align: center;
+  display:inline-block;
+  background-color:transparent;
+  background-image:url(images/refresh.png);
+  background-repeat:no-repeat;
+  background-position: 0px 0px;
 }

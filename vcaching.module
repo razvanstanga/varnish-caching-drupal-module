@@ -13,19 +13,21 @@ module_load_include('php', 'vcaching', 'vcaching.class');
 function vcaching_help($path, $arg) {
   switch ($path) {
     case 'admin/config/system/vcaching':
-    return '';
+      return '';
+
     case 'admin/config/system/vcaching/console':
-    return '';
+      return '';
+
     case 'admin/config/system/vcaching/stats':
-    return '';
+      return '';
+
   }
 }
 
 /**
  * Implements hook_init().
  */
-function vcaching_init()
-{
+function vcaching_init() {
   $enable = variable_get('vcaching_enable');
   if ($enable) {
     drupal_add_http_header('X-VC-Enabled', 'true');
@@ -51,8 +53,7 @@ function vcaching_init()
 /**
  * Implements hook_node_presave().
  */
-function vcaching_node_presave($node)
-{
+function vcaching_node_presave($node) {
   if (variable_get('vcaching_enable')) {
     $vcaching = new VCaching('vcaching_');
     if (variable_get('vcaching_clear_cache_node_save')) {
@@ -66,12 +67,8 @@ function vcaching_node_presave($node)
 
 /**
  * Implements hook_node_delete().
- *
- * @param  object $node
- * @return void
  */
-function varnish_node_delete($node)
-{
+function varnish_node_delete($node) {
   if (variable_get('vcaching_enable')) {
     $vcaching = new VCaching('vcaching_');
     $vcaching->purgeUrl(base_path() . $node->path['alias']);
@@ -81,11 +78,8 @@ function varnish_node_delete($node)
 
 /**
  * Implements hook_menu().
- *
- * @return array
  */
-function vcaching_menu()
-{
+function vcaching_menu() {
   $items = array();
 
   $items['admin/config/system/vcaching'] = array(
@@ -125,7 +119,7 @@ function vcaching_menu()
     'description' => 'Varnish Caching Stats',
     'page callback' => 'vcaching_stats_form',
     'page arguments' => array(),
-    'access callback' => true,
+    'access callback' => TRUE,
     'access arguments' => array('varnish caching stats access'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 30
@@ -156,8 +150,6 @@ function vcaching_menu()
 
 /**
  * Implements hook_permission().
- *
- * @return array
  */
 function vcaching_permission() {
   return array(
@@ -181,15 +173,14 @@ function vcaching_permission() {
  *
  * @return array
  */
-function vcaching_settings_form()
-{
+function vcaching_settings_form() {
   $form = array();
   $form['general'] = array(
     '#type' => 'fieldset',
     '#title' => t('Settings'),
     '#weight' => 5,
-    '#collapsible' => false,
-    '#collapsed' => false
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE
     );
   $form['general']['vcaching_enable'] = array(
     '#type' => 'checkbox',
@@ -305,15 +296,14 @@ function vcaching_settings_form()
  *
  * @return array
  */
-function vcaching_console_form()
-{
+function vcaching_console_form() {
   $form = array();
   $form['action'] = array(
     '#type' => 'fieldset',
     '#title' => t('Console'),
     '#weight' => 5,
-    '#collapsible' => false,
-    '#collapsed' => false
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE
     );
   $form['action']['vcaching_console_url'] = array(
     '#type' => 'textfield',
@@ -329,12 +319,11 @@ function vcaching_console_form()
 }
 
 /**
- * Console form submit
+ * Console form submit.
  *
  * @return void
  */
-function vcaching_console_form_submit($form, &$form_state)
-{
+function vcaching_console_form_submit($form, &$form_state) {
   if (variable_get('vcaching_enable')) {
     $vcaching = new VCaching('vcaching_');
     $vcaching->purgeUrl($_POST['vcaching_console_url']);
@@ -343,12 +332,11 @@ function vcaching_console_form_submit($form, &$form_state)
 }
 
 /**
- * Stats form
+ * Stats form.
  *
  * @return void|string
  */
-function vcaching_stats_form()
-{
+function vcaching_stats_form() {
   if (variable_get('vcaching_enable')) {
     $vcaching = new VCaching('vcaching_');
     return $vcaching->stats();
@@ -356,19 +344,18 @@ function vcaching_stats_form()
 }
 
 /**
- * Conf form
+ * Conf form.
  *
  * @return array
  */
-function vcaching_conf_form()
-{
+function vcaching_conf_form() {
   $form = array();
   $form['general'] = array(
     '#type' => 'fieldset',
     '#title' => t('Varnish Cache configuration'),
     '#weight' => 5,
-    '#collapsible' => false,
-    '#collapsed' => false
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE
     );
   $form['general']['vcaching_conf_backends'] = array(
     '#type' => 'textfield',
@@ -376,7 +363,7 @@ function vcaching_conf_form()
     '#description' => t('Comma separated ip/ip:port. Example : 192.168.0.2,192.168.0.3:8080'),
     '#default_value' => variable_get('vcaching_conf_backends'),
     '#size' => 60,
-    '#required' => true
+    '#required' => TRUE
     );
   $form['general']['vcaching_conf_acls'] = array(
     '#type' => 'textfield',
@@ -384,15 +371,15 @@ function vcaching_conf_form()
     '#description' => t('Comma separated ip/ip range. Example : 192.168.0.2,192.168.1.1/24'),
     '#default_value' => variable_get('vcaching_conf_acls'),
     '#size' => 60,
-    '#required' => true
+    '#required' => TRUE
     );
   $form['general']['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
   $form['action'] = array(
     '#type' => 'fieldset',
     '#title' => t('Get configuration files'),
     '#weight' => 5,
-    '#collapsible' => false,
-    '#collapsed' => false
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE
     );
   $form['action']['vcaching_conf_version'] = array(
     '#type' => 'select',
@@ -400,16 +387,14 @@ function vcaching_conf_form()
     '#description' => t('Varnish Cache version'),
     '#options' => array(3 => 3,4 => 4),
     '#default_value' => 3,
-    '#required' => true
+    '#required' => TRUE
     );
   $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Download'), '#submit' => array('vcaching_conf_form_submit'));
   return system_settings_form($form);
 }
 
 /**
- * Implements form_alter()
- *
- * @return void
+ * Implements form_alter().
  */
 function vcaching_form_alter(&$form, &$form_state, $form_id)
 {
@@ -419,7 +404,7 @@ function vcaching_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
- * Conf form submit
+ * Conf form submit.
  *
  * @return void
  */
@@ -435,7 +420,7 @@ function vcaching_conf_form_submit($form, &$form_state)
 }
 
 /**
- * Shortcut callback
+ * Shortcut callback.
  *
  * @return void
  */
@@ -450,9 +435,7 @@ function vcaching_purge_all_cache_callback()
 }
 
 /**
- * Implements hook_user_login()
- *
- * @return void
+ * Implements hook_user_login().
  */
 function vcaching_user_login(&$edit, $account)
 {
@@ -460,9 +443,7 @@ function vcaching_user_login(&$edit, $account)
 }
 
 /**
- * Implements hook_user_logout()
- *
- * @return void
+ * Implements hook_user_logout().
  */
 function vcaching_user_logout($account)
 {
