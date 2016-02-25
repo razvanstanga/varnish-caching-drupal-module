@@ -265,7 +265,7 @@ function vcaching_settings_form() {
   $form['general']['vcaching_clear_cache_node_save'] = array(
     '#type' => 'checkbox',
     '#title' => t('Clear all cache on node save'),
-    '#description' => t('If this option is on, each node save will trigger a full cache purge (/.*). If it\'s off, only the pages associated with the node will be purged.'),
+    '#description' => t("If this option is on, each node save will trigger a full cache purge (/.*). If it's off, only the pages associated with the node will be purged."),
     '#default_value' => variable_get('vcaching_clear_cache_node_save', 0),
     '#title_display' => 'before',
   );
@@ -313,7 +313,11 @@ function vcaching_console_form() {
     '#maxlength' => 500,
     '#required' => TRUE,
   );
-  $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Purge cache'), '#submit' => array('vcaching_console_form_submit'));
+  $form['action']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Purge cache'),
+    '#submit' => array('vcaching_console_form_submit'),
+  );
   return system_settings_form($form);
 }
 
@@ -393,8 +397,7 @@ function vcaching_conf_form() {
 /**
  * Implements form_alter().
  */
-function vcaching_form_alter(&$form, &$form_state, $form_id)
-{
+function vcaching_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'vcaching_conf_form') {
     unset($form['actions']['submit']);
   }
@@ -403,9 +406,8 @@ function vcaching_form_alter(&$form, &$form_state, $form_id)
 /**
  * Conf form submit.
  */
-function vcaching_conf_form_submit($form, &$form_state)
-{
-  $version = in_array($_POST['vcaching_conf_version'], array(3,4)) ? $_POST['vcaching_conf_version'] : 3;
+function vcaching_conf_form_submit($form, &$form_state) {
+  $version = in_array($_POST['vcaching_conf_version'], array(3, 4)) ? $_POST['vcaching_conf_version'] : 3;
   if (variable_get('vcaching_enable')) {
     $vcaching = new VCaching('vcaching_');
     $vcaching->downloadConf($version);
@@ -418,8 +420,7 @@ function vcaching_conf_form_submit($form, &$form_state)
 /**
  * Shortcut callback.
  */
-function vcaching_purge_all_cache_callback()
-{
+function vcaching_purge_all_cache_callback() {
   if (variable_get('vcaching_enable')) {
     $vcaching = new VCaching('vcaching_');
     $vcaching->purgeUrl(base_path() . '?vc-regex');
@@ -431,15 +432,13 @@ function vcaching_purge_all_cache_callback()
 /**
  * Implements hook_user_login().
  */
-function vcaching_user_login(&$edit, $account)
-{
+function vcaching_user_login(&$edit, $account) {
   user_cookie_save(array(variable_get('vcaching_cookie') => 1));
 }
 
 /**
  * Implements hook_user_logout().
  */
-function vcaching_user_logout($account)
-{
+function vcaching_user_logout($account) {
   user_cookie_delete(variable_get('vcaching_cookie'));
 }

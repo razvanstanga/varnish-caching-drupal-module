@@ -23,22 +23,18 @@ class VCaching {
   /**
    * Constructor.
    *
-   * @param string $prefix
+   * @param string $prefix prefix
    */
-  public function __construct($prefix)
-  {
+  public function __construct($prefix) {
     $this->prefix = $prefix;
-    $this->_setupIpsToHosts();
-    $this->purgeKey = ($purge_key = trim(variable_get($this->prefix . 'purge_key'))) ? $purge_key : null;
+    $this->setupIpsToHosts();
+    $this->purgeKey = ($purge_key = trim(variable_get($this->prefix . 'purge_key'))) ? $purge_key : NULL;
   }
 
   /**
    * Sets up needed vars.
-   *
-   * @return void
    */
-  private function _setupIpsToHosts()
-  {
+  private function setupIpsToHosts() {
     $this->debug = variable_get($this->prefix . 'debug');
     $this->varnishIps = variable_get($this->prefix . 'ips');
     $this->varnishHosts = variable_get($this->prefix . 'hosts');
@@ -60,11 +56,11 @@ class VCaching {
         'ip' => $ip,
         'port' => $port,
         'host' => $this->dynamicHost ? $_SERVER['HTTP_HOST'] : $varnish_hosts[$key],
-        'statsJson' => isset($stats_jsons[$key]) ? $stats_jsons[$key] : null
-        );
+        'statsJson' => isset($stats_jsons[$key]) ? $stats_jsons[$key] : NULL,
+      );
     }
 
-    $this->purgeKey = ($purge_key = trim(variable_get($this->prefix . 'purge_key'))) ? $purge_key : null;
+    $this->purgeKey = ($purge_key = trim(variable_get($this->prefix . 'purge_key'))) ? $purge_key : NULL;
   }
 
   /**
@@ -72,12 +68,11 @@ class VCaching {
    *
    * @return void
    */
-  public function purgeCache()
-  {
+  public function purgeCache() {
     $purge_urls = array_unique($this->purgeUrls);
 
     if (!empty($purge_urls)) {
-      foreach($purge_urls as $url) {
+      foreach ($purge_urls as $url) {
         $this->purgeUrl($url);
       }
     }
@@ -86,22 +81,19 @@ class VCaching {
   /**
    * Fetches the notice message.
    *
-   * @param boolean $console
+   * @param bool $console
    * @return string
    */
-  public function getNoticeMessage($console = FALSE)
-  {
-    return ($console ? str_replace("<br />", "\n", $this->noticeMessage): $this->noticeMessage);
+  public function getNoticeMessage($console = FALSE) {
+    return ($console ? str_replace("<br />", "\n", $this->noticeMessage) : $this->noticeMessage);
   }
 
   /**
    * Purges the given URL.
    *
    * @param string $url relative url
-   * @return void
    */
-  public function purgeUrl($url)
-  {
+  public function purgeUrl($url) {
     $p = parse_url($url);
 
     if (isset($p['path'])) {
@@ -124,10 +116,11 @@ class VCaching {
       if (!is_null($this->purgeKey)) {
         $headers['X-VC-Purge-Key'] = $this->purgeKey;
       }
-      $response = $this->_vcachingCachePurge($ip_to_host['ip'], $ip_to_host['port'], $purgeurl, $headers);
+      $response = $this->vcachingCachePurge($ip_to_host['ip'], $ip_to_host['port'], $purgeurl, $headers);
       if ($response['error'] == TRUE) {
         $this->noticeMessage .= 'Error ' . $response['message'];
-      } else {
+      }
+      else {
         $this->noticeMessage .= '<br />' . t('Trying to purge URL :') . $purgeurl;
         preg_match("/<title>(.*)<\/title>/i", $response['message'], $matches);
         $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? ' => ' . $matches[1] : $response['message'];
@@ -144,8 +137,7 @@ class VCaching {
    *
    * @return string
    */
-  public function stats()
-  {
+  public function stats() {
     $html = '<fieldset class="form-wrapper" id="edit-general"><legend><span class="fieldset-legend">' . t('Stats') . '</span></legend>' . "\n";
     $html .= '<div class="fieldset-wrapper">' . "\n";
     if ($_GET['info'] == 1) {
@@ -204,7 +196,7 @@ class VCaching {
         $html .= 'var server = \'.server_' . $server . '\'' . "\n";
         $html .= 'jQuery(server).html(\'\');' . "\n";
         $html .= 'jQuery(server).append(\'<div id="block-system-vcaching-help" class="block block-system"><div class="block-content clearfix"><p>' . sprintf(t('Stats for server %1$s generated on'), $ip_to_host['ip']) . ' \' + data.timestamp);' . " + '</p></div></div>'\n";
-        $html .= 'jQuery(server).append(\'<table><thead><tr><th><strong>' . t('Description') . '</strong></th><th><strong>' . t('Value') . '</strong></th><th><strong>' . t('Key') .'</strong></th></tr></thead><tbody class="varnishstats_' . $server . '"></tbody></table>\')' . "\n";
+        $html .= 'jQuery(server).append(\'<table><thead><tr><th><strong>' . t('Description') . '</strong></th><th><strong>' . t('Value') . '</strong></th><th><strong>' . t('Key') . '</strong></th></tr></thead><tbody class="varnishstats_' . $server . '"></tbody></table>\')' . "\n";
         $html .= 'delete data.timestamp;' . "\n";
         $html .= 'jQuery.each(data, function(key, val) {' . "\n";
         $html .= 'jQuery(\'.varnishstats_' . $server . '\').append(\'<tr><td class="views-field views-field-title">\'+val.description+\'</td><td>\'+val.value+\'</td><td>\'+key+\'</td></tr>\');' . "\n";
@@ -237,8 +229,7 @@ class VCaching {
    *
    * @return array
    */
-  private function _vcachingCachePurge($server_ip, $server_port, $path = '/.*', $headers)
-  {
+  private function vcachingCachePurge($server_ip, $server_port, $path = '/.*', array $headers = []) {
     $fp = fsockopen($server_ip, $server_port, $errno, $errstr, 2);
     if (!$fp) {
       return array('error' => TRUE, 'message' => $errstr . '(' . $errno . ')');
@@ -264,8 +255,7 @@ class VCaching {
    *
    * @param int $version
    */
-  public function downloadConf($version)
-  {
+  public function downloadConf($version) {
     $tmpfile = tempnam("tmp", "zip");
     $zip = new ZipArchive();
     $zip->open($tmpfile, ZipArchive::OVERWRITE);
@@ -287,7 +277,7 @@ class VCaching {
     foreach ($files as $file => $parse) {
       $filepath = __DIR__ . '/varnish-conf/v' . $version . '/' . $file;
       if ($parse) {
-        $content = $this->_parseConfFile($version, $file, file_get_contents($filepath));
+        $content = $this->parseConfFile($version, $file, file_get_contents($filepath));
       }
       else {
         $content = file_get_contents($filepath);
@@ -312,15 +302,16 @@ class VCaching {
    *
    * @return string
    */
-  private function _parseConfFile($version, $file, $content)
-  {
+  private function parseConfFile($version, $file, $content) {
     if ($file == 'default.vcl') {
       $logged_in_cookie = variable_get($this->prefix . 'cookie');
       $content = str_replace('c005492c65', $logged_in_cookie, $content);
-    } elseif ($file == 'conf/backend.vcl') {
+    }
+    elseif ($file == 'conf/backend.vcl') {
       if ($version == 3) {
         $content = "";
-      } elseif ($version == 4) {
+      }
+      elseif ($version == 4) {
         $content = "import directors;\n\n";
       }
       $backend = array();
@@ -332,7 +323,8 @@ class VCaching {
           $_ip = explode(':', $ip);
           $ip = $_ip[0];
           $port = $_ip[1];
-        } else {
+        }
+        else {
           $port = 80;
         }
         $content .= "backend backend" . $id . " {\n";
@@ -352,7 +344,8 @@ class VCaching {
         $content .= "\nsub vcl_recv {\n";
         $content .= "\tset req.backend = backends;\n";
         $content .= "}\n";
-      } elseif ($version == 4) {
+      }
+      elseif ($version == 4) {
         $content .= "\nsub vcl_init {\n";
         $content .= "\tnew backends = directors.round_robin();\n";
         $content .= $backend[4];
@@ -361,7 +354,8 @@ class VCaching {
         $content .= "\tset req.backend_hint = backends.backend();\n";
         $content .= "}\n";
       }
-    } elseif ($file == 'conf/acl.vcl') {
+    }
+    elseif ($file == 'conf/acl.vcl') {
       $acls = variable_get($this->prefix . 'conf_acls');
       $acls = explode(',', $acls);
       $content = "acl cloudflare {\n";
@@ -375,10 +369,12 @@ class VCaching {
         $content .= "\t\"" . $acl . "\";\n";
       }
       $content .= "}\n";
-    } elseif ($file == 'lib/purge.vcl') {
+    }
+    elseif ($file == 'lib/purge.vcl') {
       $purge_key = variable_get($this->prefix . 'purge_key');
       $content = str_replace('ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4', $purge_key, $content);
     }
     return $content;
   }
+
 }
