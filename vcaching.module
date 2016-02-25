@@ -46,7 +46,8 @@ function vcaching_init() {
     if (variable_get('vcaching_debug')) {
       drupal_add_http_header('X-VC-Debug', 'true');
     }
-  } else {
+  }
+  else {
     drupal_add_http_header('X-VC-Enabled', 'false');
   }
 }
@@ -59,7 +60,8 @@ function vcaching_node_presave($node) {
     $vcaching = new VCaching('vcaching_');
     if (variable_get('vcaching_clear_cache_node_save')) {
       $vcaching->purgeUrl(base_path() . '?vc-regex');
-    } else {
+    }
+    else {
       $vcaching->purgeUrl(base_path() . $node->path['alias']);
     }
     drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
@@ -93,7 +95,7 @@ function vcaching_menu() {
     'weight' => 50,
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-    );
+  );
 
   $items['admin/config/system/vcaching/settings'] = array(
     'title' => 'Settings',
@@ -103,7 +105,7 @@ function vcaching_menu() {
     'access arguments' => array('varnish caching settings access'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
-    );
+  );
 
   $items['admin/config/system/vcaching/console'] = array(
     'title' => 'Console',
@@ -113,7 +115,7 @@ function vcaching_menu() {
     'access arguments' => array('varnish caching console access'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 20,
-    );
+  );
 
   $items['admin/config/system/vcaching/stats'] = array(
     'title' => 'Stats',
@@ -124,7 +126,7 @@ function vcaching_menu() {
     'access arguments' => array('varnish caching stats access'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 30,
-    );
+  );
 
   $items['admin/config/system/vcaching/conf'] = array(
     'title' => 'Varnish VCLs',
@@ -134,7 +136,7 @@ function vcaching_menu() {
     'access arguments' => array('varnish caching settings access'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 40,
-    );
+  );
 
   $items['vcaching_purge_all_cache'] = array(
     'title' => 'Purge Varnish cache',
@@ -144,7 +146,7 @@ function vcaching_menu() {
     'menu_name' => 'shortcut-set-1',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 10,
-    );
+  );
 
   return $items;
 }
@@ -171,8 +173,6 @@ function vcaching_permission() {
 
 /**
  * Settings form.
- *
- * @return array
  */
 function vcaching_settings_form() {
   $form = array();
@@ -220,7 +220,7 @@ function vcaching_settings_form() {
   $form['general']['vcaching_dynamic_host'] = array(
     '#type' => 'checkbox',
     '#title' => t('Dynamic host'),
-    '#description' => t('Uses the $_SERVER[\'HTTP_HOST\'] as hash for Varnish. This means the purge cache action will work on the domain you\'re on. Use this option if you use only one domain.'),
+    '#description' => t("Uses the \$_SERVER['HTTP_HOST'] as hash for Varnish. This means the purge cache action will work on the domain you're on. Use this option if you use only one domain."),
     '#default_value' => variable_get('vcaching_dynamic_host', 0),
   );
   if (variable_get('vcaching_dynamic_host') == 0) {
@@ -232,18 +232,18 @@ function vcaching_settings_form() {
       '#size' => 60,
       '#maxlength' => 500,
       '#required' => TRUE,
-      );
+    );
   }
   $form['general']['vcaching_purge_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Purge key'),
-    '#suffix' => '<div class="description">' . t('Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash. If you can\'t use ACL\'s, use this option. You can set the `purge key` in lib/purge.vcl.<br />Search the default value ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4 to find where to replace it.') . '</div>',
+    '#suffix' => '<div class="description">' . t("Key used to purge Varnish cache. It is sent to Varnish as X-VC-Purge-Key header. Use a SHA-256 hash. If you can't use ACL's, use this option. You can set the `purge key` in lib/purge.vcl.<br />Search the default value ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4 to find where to replace it.") . '</div>',
     '#field_suffix' => '<span class="vcaching-reload" onclick="generateHash(64, 0, \'edit-vcaching-purge-key\'); return false;" title="' . t('Generate') . '"></span>',
     '#default_value' => variable_get('vcaching_purge_key', 'ff93c3cb929cee86901c7eefc8088e9511c005492c6502a930360c02221cf8f4'),
     '#size' => 100,
     '#maxlength' => 64,
     '#required' => TRUE,
-    );
+  );
   $form['general']['vcaching_cookie'] = array(
     '#type' => 'textfield',
     '#title' => t('Logged in cookie'),
@@ -253,7 +253,7 @@ function vcaching_settings_form() {
     '#size' => 10,
     '#maxlength' => 10,
     '#required' => TRUE,
-    );
+  );
   $form['general']['vcaching_stats_json_file'] = array(
     '#type' => 'textfield',
     '#title' => t('Statistics JSONs'),
@@ -261,21 +261,21 @@ function vcaching_settings_form() {
     '#default_value' => variable_get('vcaching_stats_json_file', '/varnishstats.json'),
     '#size' => 100,
     '#maxlength' => 128,
-    );
+  );
   $form['general']['vcaching_clear_cache_node_save'] = array(
     '#type' => 'checkbox',
     '#title' => t('Clear all cache on node save'),
     '#description' => t('If this option is on, each node save will trigger a full cache purge (/.*). If it\'s off, only the pages associated with the node will be purged.'),
     '#default_value' => variable_get('vcaching_clear_cache_node_save', 0),
     '#title_display' => 'before',
-    );
+  );
   $form['general']['vcaching_debug'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable debug'),
     '#description' => t('Send all debugging headers to the client. Also shows complete response from Varnish on purge all.'),
     '#default_value' => variable_get('vcaching_debug', 0),
     '#title_display' => 'before',
-    );
+  );
 
   drupal_add_js('
     function generateHash(length, bits, id) {
@@ -294,8 +294,6 @@ function vcaching_settings_form() {
 
 /**
  * Console form.
- *
- * @return array
  */
 function vcaching_console_form() {
   $form = array();

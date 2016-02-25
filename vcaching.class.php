@@ -6,48 +6,48 @@
  */
 
 /**
- * VCaching Class
+ * VCaching Class.
  */
 class VCaching {
   protected $prefix = '';
-  protected $purge_urls = array();
-  protected $varnish_ip = NULL;
-  protected $varnish_host = NULL;
-  protected $dynamic_host = NULL;
-  protected $ips_to_hosts = array();
-  protected $stats_jsons = array();
+  protected $purgeUrls = array();
+  protected $varnishIps = NULL;
+  protected $varnishHosts = NULL;
+  protected $dynamicHost = NULL;
+  protected $ipsToHosts = array();
+  protected $statsJsons = array();
   protected $purgeKey = NULL;
   protected $noticeMessage = '';
   protected $debug = 0;
 
   /**
-   * Constructor
+   * Constructor.
    *
    * @param string $prefix
    */
   public function __construct($prefix)
   {
     $this->prefix = $prefix;
-    $this->setupIpsToHosts();
-    $this->purgeKey = ($purgeKey = trim(variable_get($this->prefix . 'purge_key'))) ? $purgeKey : null;
+    $this->_setupIpsToHosts();
+    $this->purgeKey = ($purge_key = trim(variable_get($this->prefix . 'purge_key'))) ? $purge_key : null;
   }
 
   /**
-   * Sets up needed vars
+   * Sets up needed vars.
    *
    * @return void
    */
-  protected function setupIpsToHosts()
+  private function _setupIpsToHosts()
   {
     $this->debug = variable_get($this->prefix . 'debug');
-    $this->varnish_ip = variable_get($this->prefix . 'ips');
-    $this->varnish_host = variable_get($this->prefix . 'hosts');
-    $this->dynamic_host = variable_get($this->prefix . 'dynamic_host');
-    $this->stats_jsons = variable_get($this->prefix . 'stats_json_file');
-    $varnish_ip = explode(',', $this->varnish_ip);
-    $varnish_host = explode(',', $this->varnish_host);
-    $stats_jsons = explode(',', $this->stats_jsons);
-    foreach ($varnish_ip as $key => $ip) {
+    $this->varnishIps = variable_get($this->prefix . 'ips');
+    $this->varnishHosts = variable_get($this->prefix . 'hosts');
+    $this->dynamicHost = variable_get($this->prefix . 'dynamicHost');
+    $this->statsJsons = variable_get($this->prefix . 'stats_json_file');
+    $varnish_ips = explode(',', $this->varnishIps);
+    $varnish_hosts = explode(',', $this->varnishHosts);
+    $stats_jsons = explode(',', $this->statsJsons);
+    foreach ($varnish_ips as $key => $ip) {
       if (strpos($ip, ':')) {
         $_ip = explode(':', $ip);
         $ip = $_ip[0];
@@ -56,25 +56,25 @@ class VCaching {
       else {
         $port = 80;
       }
-      $this->ips_to_hosts[] = array(
+      $this->ipsToHosts[] = array(
         'ip' => $ip,
         'port' => $port,
-        'host' => $this->dynamic_host ? $_SERVER['HTTP_HOST'] : $varnish_host[$key],
+        'host' => $this->dynamicHost ? $_SERVER['HTTP_HOST'] : $varnish_hosts[$key],
         'statsJson' => isset($stats_jsons[$key]) ? $stats_jsons[$key] : null
         );
     }
 
-    $this->purgeKey = ($purgeKey = trim(variable_get($this->prefix . 'purge_key'))) ? $purgeKey : null;
+    $this->purgeKey = ($purge_key = trim(variable_get($this->prefix . 'purge_key'))) ? $purge_key : null;
   }
 
   /**
-   * Purge cache
+   * Purge cache.
    *
    * @return void
    */
   public function purgeCache()
   {
-    $purge_urls = array_unique($this->purge_urls);
+    $purge_urls = array_unique($this->purgeUrls);
 
     if (!empty($purge_urls)) {
       foreach($purge_urls as $url) {
@@ -84,7 +84,7 @@ class VCaching {
   }
 
   /**
-   * Fetches the notice message
+   * Fetches the notice message.
    *
    * @param boolean $console
    * @return string
@@ -95,7 +95,7 @@ class VCaching {
   }
 
   /**
-   * Purges the given URL
+   * Purges the given URL.
    *
    * @param string $url relative url
    * @return void
@@ -119,7 +119,7 @@ class VCaching {
       $purgemethod = 'default';
       $purgeurl = $path;
     }
-    foreach ($this->ips_to_hosts as $ip_to_host) {
+    foreach ($this->ipsToHosts as $ip_to_host) {
       $headers = array('host' => $ip_to_host['host'], 'X-VC-Purge-Method' => $purgemethod, 'X-VC-Purge-Host' => $ip_to_host['host']);
       if (!is_null($this->purgeKey)) {
         $headers['X-VC-Purge-Key'] = $this->purgeKey;
@@ -140,7 +140,7 @@ class VCaching {
   }
 
   /**
-   * Stats TAB HTML generator
+   * Stats TAB HTML generator.
    *
    * @return string
    */
@@ -184,26 +184,26 @@ class VCaching {
       $html .= '</div>' . "\n";
       $html .= '</div>' . "\n";
     }
-    if(trim($this->stats_jsons)){
+    if (trim($this->statsJsons)) {
       $html .= '<div class="block clearfix block-system">' . "\n";
       $html .= '<div class="block-content clearfix"><p class="clearfix"><strong>Select server</strong></p>' . "\n";
       $html .= '<ul class="secondary-tabs links clearfix">' . "\n";
-      foreach ($this->ips_to_hosts as $server => $ip_to_host) {
-        $html .= '<li class="links ' . (($server == 0) ? 'active' : '') . '"><a class="server nav-tab" href="#" server="' . $server . '">'. sprintf(t('Server %1$s'), $ip_to_host['ip']).'</a></li>' . "\n";
+      foreach ($this->ipsToHosts as $server => $ip_to_host) {
+        $html .= '<li class="links ' . (($server == 0) ? 'active' : '') . '"><a class="server nav-tab" href="#" server="' . $server . '">' . sprintf(t('Server %1$s'), $ip_to_host['ip']) . '</a></li>' . "\n";
       }
       $html .= '</ul>';
       $html .= '</div>' . "\n";
       $html .= '</div>' . "\n";
 
-      foreach ($this->ips_to_hosts as $server => $ip_to_host) {
+      foreach ($this->ipsToHosts as $server => $ip_to_host) {
         $html .= '<div style="display:' . (($server == 0) ? 'block' : 'none') . '" class="servers server_' . $server . '">';
         $html .= sprintf(t('Fetching stats for server %1$s'), $ip_to_host['ip']);
         $html .= '</div>' . "\n";
         $html .= '<script type="text/javascript">' . "\n";
         $html .= 'jQuery.getJSON("' . $ip_to_host['statsJson'] . '", function(data) {' . "\n";
-        $html .= 'var server = \'.server_' . $server .'\'' . "\n";
+        $html .= 'var server = \'.server_' . $server . '\'' . "\n";
         $html .= 'jQuery(server).html(\'\');' . "\n";
-        $html .= 'jQuery(server).append(\'<div id="block-system-vcaching-help" class="block block-system"><div class="block-content clearfix"><p>' . sprintf(t('Stats for server %1$s generated on '), $ip_to_host['ip']) . '\' + data.timestamp);' . " + '</p></div></div>'\n";
+        $html .= 'jQuery(server).append(\'<div id="block-system-vcaching-help" class="block block-system"><div class="block-content clearfix"><p>' . sprintf(t('Stats for server %1$s generated on'), $ip_to_host['ip']) . ' \' + data.timestamp);' . " + '</p></div></div>'\n";
         $html .= 'jQuery(server).append(\'<table><thead><tr><th><strong>' . t('Description') . '</strong></th><th><strong>' . t('Value') . '</strong></th><th><strong>' . t('Key') .'</strong></th></tr></thead><tbody class="varnishstats_' . $server . '"></tbody></table>\')' . "\n";
         $html .= 'delete data.timestamp;' . "\n";
         $html .= 'jQuery.each(data, function(key, val) {' . "\n";
@@ -228,24 +228,25 @@ class VCaching {
   }
 
   /**
-   * The socket connection to Varnish
+   * The socket connection to Varnish.
    *
    * @param string $server_ip
    * @param string $server_port
    * @param string $path
    * @param array $headers
+   *
    * @return array
    */
-  protected function _vcachingCachePurge($server_ip, $server_port, $path = '/.*', $headers)
+  private function _vcachingCachePurge($server_ip, $server_port, $path = '/.*', $headers)
   {
     $fp = fsockopen($server_ip, $server_port, $errno, $errstr, 2);
     if (!$fp) {
-      return array('error' => TRUE, 'message' => $errstr .'(' . $errno . ')');
+      return array('error' => TRUE, 'message' => $errstr . '(' . $errno . ')');
     }
     else {
       $out = "PURGE " . $path . " HTTP/1.0\n";
       foreach ($headers as $key => $value) {
-        $out .= $key . ': '. $value . "\n";
+        $out .= $key . ': ' . $value . "\n";
       }
       $out .= "Connection: Close\n\n";
       fwrite($fp, $out);
@@ -259,10 +260,9 @@ class VCaching {
   }
 
   /**
-   * Creates the configuration zip archive
+   * Creates the configuration zip archive.
    *
    * @param int $version
-   * @return void
    */
   public function downloadConf($version)
   {
@@ -304,14 +304,15 @@ class VCaching {
   }
 
   /**
-   * Parses the config files
+   * Parses the config files.
    *
    * @param int $version
    * @param string $file
    * @param string $content
+   *
    * @return string
    */
-  protected function _parseConfFile($version, $file, $content)
+  private function _parseConfFile($version, $file, $content)
   {
     if ($file == 'default.vcl') {
       $logged_in_cookie = variable_get($this->prefix . 'cookie');
