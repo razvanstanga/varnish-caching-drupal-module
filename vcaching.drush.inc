@@ -15,35 +15,31 @@ function vcaching_drush_command() {
     'drupal dependencies' => array('vcaching'),
     'aliases' => array('vpa'),
     'callback' => 'vcaching_purge_all',
-    );
+  );
   $items['vcaching-purge-urls'] = array(
     'description' => "Purge a list of URLs in varnish.",
     'arguments' => array(
       'paths' => 'A list of paths to purge separated by ;. Regular expressions allowed.',
-      ),
+    ),
     'aliases' => array('vpu'),
     'drupal dependencies' => array('vcaching'),
     'callback' => 'vcaching_purge_urls',
-    );
+  );
   return $items;
 }
 
 /**
  * Callback for vcaching-purge-all drush command.
- *
- * @return void
  */
 function vcaching_purge_all() {
   $vcaching = new VCaching('vcaching_');
   drush_log(t('Purging all Varnish cache'), 'ok');
   $vcaching->purgeUrl(base_path() . '?vc-regex');
-  drush_log($vcaching->getNoticeMessage(true), 'ok');
+  drush_log($vcaching->getNoticeMessage(TRUE), 'ok');
 }
 
 /**
  * Callback for vcaching-purge-urls drush command.
- *
- * @param string $paths A space separated list of paths.
  */
 function vcaching_purge_urls($paths) {
   $vcaching = new VCaching('vcaching_');
@@ -52,7 +48,7 @@ function vcaching_purge_urls($paths) {
     drush_log("Purging Varnish cache path " . $path);
     $vcaching->purgeUrl($path);
   }
-  drush_log($vcaching->getNoticeMessage(true), 'ok');
+  drush_log($vcaching->getNoticeMessage(TRUE), 'ok');
 }
 
 /**
