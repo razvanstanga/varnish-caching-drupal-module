@@ -18,7 +18,7 @@ limiting what can run on the web backend and without customizing the
 configuration for each customer.
 
 See `default.vcl` for an example of how to use this collection
-of VCLs to configure Varnish for a WordPress site.
+of VCLs to configure Varnish for a Drupal site.
 
 
 CloudFlare

@@ -112,7 +112,7 @@ TROUBLESHOOTING
     - Logged in cookie is a special cookie this plugin sets upon user login. Varnish Cache uses this cookie to bypass caching for logged in users.
 
     - This is a small step towards securing your site for denial of service attacks. Denial of service attacks can happen if the attacker bypasses Varnish Cache and hits the backend directly.
-    - With the current configuration and the way Wordpress works, this can still happen with POST/AJAX requests.
+    - With the current configuration and the way Drupal works, this can still happen with POST/AJAX requests.
 
 
 CREDITS / CONTACT
