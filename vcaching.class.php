@@ -109,8 +109,8 @@ class VCaching
 
     public function stats()
     {
-        $html = '';
-        $html .= '<div class="view-content">' . "\n";
+        $html = '<fieldset class="form-wrapper" id="edit-general"><legend><span class="fieldset-legend">' . t('Stats') . '</span></legend>' . "\n";
+        $html .= '<div class="fieldset-wrapper">' . "\n";
         if ($_GET['info'] == 1) {
             $html .= '<div class="block clearfix block-system">' . "\n";
             $html .= '<div class="block-content clearfix">' . "\n";
@@ -186,6 +186,7 @@ class VCaching
             $html .= '</script>' . "\n";
         }
         $html .= '</div>' . "\n";
+        $html .= '</fieldset>' . "\n";
         return $html;
     }
 

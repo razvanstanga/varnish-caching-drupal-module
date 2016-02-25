@@ -134,10 +134,10 @@ function vcaching_menu()
     );
 
     $items['vcaching_purge_all_cache'] = array(
-        'title' => 'Purge Varnish page cache',
-        'description' => 'Clear all page cache',
+        'title' => 'Purge Varnish cache',
+        'description' => 'Clear all cache',
         'page callback' => 'vcaching_purge_all_cache_callback',
-        'access arguments' => array('varnish caching purge all'),
+        'access arguments' => array('varnish caching console access'),
         'menu_name' => 'shortcut-set-1',
         'type' => MENU_NORMAL_ITEM,
         'weight' => 10
@@ -172,11 +172,18 @@ function vcaching_permission() {
 function vcaching_settings_form()
 {
     $form = array();
+    $form['general'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Settings'),
+        '#weight' => 5,
+        '#collapsible' => false,
+        '#collapsed' => false
+    );
     $form['general']['vcaching_enable'] = array(
         '#type' => 'checkbox',
         '#title' => t('Enable'),
         '#description' => t('Enable Varnish Caching'),
-        '#default_value' => variable_get('vcaching_enable', '1'),
+        '#default_value' => variable_get('vcaching_enable', '0'),
         '#title_display' => 'before'
     );
     $form['general']['vcaching_homepage_ttl'] = array(
@@ -287,6 +294,13 @@ function vcaching_settings_form()
 function vcaching_console_form()
 {
     $form = array();
+    $form['action'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Console'),
+        '#weight' => 5,
+        '#collapsible' => false,
+        '#collapsed' => false
+    );
     $form['action']['vcaching_console_url'] = array(
         '#type' => 'textfield',
         '#title' => t('Relative URL'),
@@ -331,7 +345,7 @@ function vcaching_conf_form()
     $form = array();
     $form['general'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Varnish configuration'),
+        '#title' => t('Varnish Cache configuration'),
         '#weight' => 5,
         '#collapsible' => false,
         '#collapsed' => false
@@ -352,6 +366,7 @@ function vcaching_conf_form()
         '#size' => 60,
         '#required' => true
     );
+    $form['general']['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
     $form['action'] = array(
         '#type' => 'fieldset',
         '#title' => t('Get configuration files'),
@@ -369,6 +384,16 @@ function vcaching_conf_form()
     );
     $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Download'), '#submit' => array('vcaching_conf_form_submit'));
     return system_settings_form($form);
+}
+
+/**
+ * Implements form_alter()
+ */
+function vcaching_form_alter(&$form, &$form_state, $form_id)
+{
+    if ($form_id == 'vcaching_conf_form') {
+        unset($form['actions']['submit']);
+    }
 }
 
 /**
@@ -422,7 +447,9 @@ function vcaching_purge_all_cache_callback()
     if (variable_get('vcaching_enable')) {
         $vcaching = new VCaching('vcaching_');
         $vcaching->purgeUrl(base_path() . '?vc-regex');
+        drupal_set_message(t('Varnish cache cleared!') . $vcaching->getNoticeMessage());
     }
+    drupal_goto($_SERVER['HTTP_REFERER']);
 }
 
 /**
