@@ -82,6 +82,7 @@ class VCaching {
    *
    * @param bool $console
    *        Apply nl2br.
+   *
    * @return string
    *         Notice message.
    */
