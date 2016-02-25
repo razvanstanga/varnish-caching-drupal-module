@@ -211,6 +211,45 @@ class VCaching
         }
     }
 
+    public function downloadConf($version)
+    {
+        $tmpfile = tempnam("tmp", "zip");
+        $zip = new ZipArchive();
+        $zip->open($tmpfile, ZipArchive::OVERWRITE);
+        $files = array(
+            'default.vcl' => true,
+            'LICENSE' => false,
+            'README.rst' => false,
+            'conf/acl.vcl' => true,
+            'conf/backend.vcl' => true,
+            'lib/bigfiles.vcl' => false,
+            'lib/bigfiles_pipe.vcl' => false,
+            'lib/cloudflare.vcl' => false,
+            'lib/mobile_cache.vcl' => false,
+            'lib/mobile_pass.vcl' => false,
+            'lib/purge.vcl' => true,
+            'lib/static.vcl' => false,
+            'lib/xforward.vcl' => false,
+        );
+        $vcaching = new VCaching('vcaching_');
+        foreach ($files as $file => $parse) {
+            $filepath = __DIR__ . '/varnish-conf/v' . $version . '/' . $file;
+            if ($parse) {
+                $content = $vcaching->_parse_conf_file($version, $file, file_get_contents($filepath));
+            } else {
+                $content = file_get_contents($filepath);
+            }
+            $zip->addFromString($file, $content);
+        }
+        $zip->close();
+        header('Content-Type: application/zip');
+        header('Content-Length: ' . filesize($tmpfile));
+        header('Content-Disposition: attachment; filename="varnish_v' . $version . '_conf.zip"');
+        readfile($tmpfile);
+        unlink($tmpfile);
+        exit();
+    }
+
     public function _parse_conf_file($version, $file, $content)
     {
         if ($file == 'default.vcl') {
