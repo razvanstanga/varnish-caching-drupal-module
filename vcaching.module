@@ -9,10 +9,8 @@ function vcaching_help($path, $arg) {
     switch ($path) {
         case 'admin/config/system/vcaching':
             //return '<p>' . t('') . '</p>';
-
         case 'admin/config/system/vcaching/console':
             //return '<p>' . t('') . '</p>';
-
         case 'admin/config/system/vcaching/stats':
             //return '<p>' . t('') . '</p>';
     }
@@ -37,7 +35,7 @@ function vcaching_init()
             }
         }
         drupal_add_http_header('X-VC-TTL', $ttl);
-        if ($debug = variable_get('vcaching_debug')) {
+        if (variable_get('vcaching_debug')) {
             drupal_add_http_header('X-VC-Debug', 'true');
         }
     } else {

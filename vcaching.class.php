@@ -87,7 +87,7 @@ class VCaching
             $purgemethod = 'default';
             $purgeurl = $path;
         }
-        foreach ($this->ipsToHosts as $key => $ipToHost) {
+        foreach ($this->ipsToHosts as $ipToHost) {
             $headers = array('host' => $ipToHost['host'], 'X-VC-Purge-Method' => $purgemethod, 'X-VC-Purge-Host' => $ipToHost['host']);
             if (!is_null($this->purgeKey)) {
                 $headers['X-VC-Purge-Key'] = $this->purgeKey;
@@ -97,7 +97,7 @@ class VCaching
                 $this->noticeMessage .= 'Error ' . $response['message'];
             } else {
                 $this->noticeMessage .= '<br />' . t('Trying to purge URL :') . $purgeurl;
-                $message = preg_match("/<title>(.*)<\/title>/i", $response['message'], $matches);
+                preg_match("/<title>(.*)<\/title>/i", $response['message'], $matches);
                 $this->noticeMessage .= ' => <br /> ' . isset($matches[1]) ? ' => ' . $matches[1] : $response['message'];
                 $this->noticeMessage .= '<br />';
                 if ($this->debug) {
