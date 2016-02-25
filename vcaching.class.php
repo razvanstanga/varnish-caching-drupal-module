@@ -23,7 +23,8 @@ class VCaching {
   /**
    * Constructor.
    *
-   * @param string $prefix prefix
+   * @param string $prefix
+   *        Prefix.
    */
   public function __construct($prefix) {
     $this->prefix = $prefix;
@@ -65,8 +66,6 @@ class VCaching {
 
   /**
    * Purge cache.
-   *
-   * @return void
    */
   public function purgeCache() {
     $purge_urls = array_unique($this->purgeUrls);
@@ -82,7 +81,9 @@ class VCaching {
    * Fetches the notice message.
    *
    * @param bool $console
+   *        Apply nl2br.
    * @return string
+   *         Notice message.
    */
   public function getNoticeMessage($console = FALSE) {
     return ($console ? str_replace("<br />", "\n", $this->noticeMessage) : $this->noticeMessage);
@@ -91,7 +92,8 @@ class VCaching {
   /**
    * Purges the given URL.
    *
-   * @param string $url relative url
+   * @param string $url
+   *        Relative URL.
    */
   public function purgeUrl($url) {
     $p = parse_url($url);
@@ -112,7 +114,11 @@ class VCaching {
       $purgeurl = $path;
     }
     foreach ($this->ipsToHosts as $ip_to_host) {
-      $headers = array('host' => $ip_to_host['host'], 'X-VC-Purge-Method' => $purgemethod, 'X-VC-Purge-Host' => $ip_to_host['host']);
+      $headers = array(
+        'host' => $ip_to_host['host'],
+        'X-VC-Purge-Method' => $purgemethod,
+        'X-VC-Purge-Host' => $ip_to_host['host'],
+      );
       if (!is_null($this->purgeKey)) {
         $headers['X-VC-Purge-Key'] = $this->purgeKey;
       }
@@ -136,6 +142,7 @@ class VCaching {
    * Stats TAB HTML generator.
    *
    * @return string
+   *         Stats html.
    */
   public function stats() {
     $html = '<fieldset class="form-wrapper" id="edit-general"><legend><span class="fieldset-legend">' . t('Stats') . '</span></legend>' . "\n";
@@ -143,7 +150,7 @@ class VCaching {
     if ($_GET['info'] == 1) {
       $html .= '<div class="block clearfix block-system">' . "\n";
       $html .= '<div class="block-content clearfix">' . "\n";
-      $html .= '<h2>' . t('Setup information') .'</h2>' . "\n";
+      $html .= '<h2>' . t('Setup information') . '</h2>' . "\n";
       $html .= '<br /><p>' . "\n";
       $html .= t('<strong>Short story</strong><br />You must generate by cronjob the JSON stats file. The generated files must be copied on the backend servers in the Drupal root folder.');
       $html .= '<br /><br />' . "\n";
@@ -157,7 +164,7 @@ class VCaching {
       $html .= '<br />' . "\n";
       $html .= sprintf(t('%1$s /path/to/the/drupal/root/varnishstat.json # every 3 minutes.'), '*/3 * * * *     root   /usr/bin/varnishstat -1j >');
       $html .= '<br />' . "\n";
-      $html .= t('Then fill in the relative path to the files in Statistics JSONs on the Settings tab :') . "\n";
+      $html .= t('Then fill in the relative path to the files in Statistics JSONs on the Settings tab :');
       $html .= '<br />' . "\n";
       $html .= '<input type="text" size="100" value="/varnishstat.json" class="fluid form-text" />' . "\n";
 
@@ -223,11 +230,16 @@ class VCaching {
    * The socket connection to Varnish.
    *
    * @param string $server_ip
+   *        Server ip address.
    * @param string $server_port
+   *        Server port.
    * @param string $path
+   *        Relatine URL.
    * @param array $headers
+   *        Extra headers.
    *
    * @return array
+   *         Array containing error/message.
    */
   private function vcachingCachePurge($server_ip, $server_port, $path = '/.*', array $headers = []) {
     $fp = fsockopen($server_ip, $server_port, $errno, $errstr, 2);
@@ -254,6 +266,7 @@ class VCaching {
    * Creates the configuration zip archive.
    *
    * @param int $version
+   *        Varnish cache version.
    */
   public function downloadConf($version) {
     $tmpfile = tempnam("tmp", "zip");
@@ -297,10 +310,14 @@ class VCaching {
    * Parses the config files.
    *
    * @param int $version
+   *        Varnish cache version.
    * @param string $file
+   *        Configuration file name.
    * @param string $content
+   *        Configuration file content.
    *
    * @return string
+   *         Modified configuration file content.
    */
   private function parseConfFile($version, $file, $content) {
     if ($file == 'default.vcl') {

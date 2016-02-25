@@ -336,6 +336,7 @@ function vcaching_console_form_submit($form, &$form_state) {
  * Stats form.
  *
  * @return void|string
+ *         stats html
  */
 function vcaching_stats_form() {
   if (variable_get('vcaching_enable')) {
@@ -348,6 +349,7 @@ function vcaching_stats_form() {
  * Conf form.
  *
  * @return array
+ *         form array
  */
 function vcaching_conf_form() {
   $form = array();
@@ -386,11 +388,15 @@ function vcaching_conf_form() {
     '#type' => 'select',
     '#title' => t('Version'),
     '#description' => t('Varnish Cache version'),
-    '#options' => array(3 => 3,4 => 4),
+    '#options' => array(3 => 3, 4 => 4),
     '#default_value' => 3,
     '#required' => TRUE,
   );
-  $form['action']['submit'] = array('#type' => 'submit', '#value' => t('Download'), '#submit' => array('vcaching_conf_form_submit'));
+  $form['action']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Download'),
+    '#submit' => array('vcaching_conf_form_submit'),
+  );
   return system_settings_form($form);
 }
 
