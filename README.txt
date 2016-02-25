@@ -63,7 +63,7 @@ INSTALLATION AND CONFIGURATION
 
  * You must install Varnish Cache on your server(s)
  * Go to the configuration generator. Fill in the backends/ACLs then download the configuration files
- * Use these configuration files to configure Varnish Cache server(s). Usualy the configuration files are in /etc/varnish. In most cases you must put the downloaded configuration files in /etc/varnish and restart Varnish Cache
+ * Use these configuration files to configure Varnish Cache server(s). Usually the configuration files are in /etc/varnish. In most cases you must put the downloaded configuration files in /etc/varnish and restart Varnish Cache
 
  * Or use the provided Varnish Cache configuration files located in /wp-content/plugins/vcaching/varnish-conf folder.
 

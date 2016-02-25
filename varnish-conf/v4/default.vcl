@@ -63,7 +63,7 @@ sub vcl_recv {
     ### looks like we might actually cache it!
 
     # strip query parameters from all urls (so they cache as a single object)
-    # be carefull using this option
+    # be careful using this option
     #if (req.url ~ "\?.*") {
     #    set req.url = regsub(req.url, "\?.*", "");
     #}
