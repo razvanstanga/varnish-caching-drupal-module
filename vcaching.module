@@ -122,7 +122,6 @@ function vcaching_menu() {
     'description' => 'Varnish Caching Stats',
     'page callback' => 'vcaching_stats_form',
     'page arguments' => array(),
-    'access callback' => TRUE,
     'access arguments' => array('varnish caching stats access'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 30,
